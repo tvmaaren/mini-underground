@@ -59,7 +59,20 @@ float distance2d(Point2d a, Point2d b){
 
 const int n_lines =7;
 
-vector<int> lines[n_lines];
+typedef struct node node_t;
+
+struct node{
+	node_t* next;
+	int value;
+};
+
+node_t* add_node_before(node_t* node){
+	node_t *new_node_p  = (node_t*)malloc(sizeof(node_t));
+	new_node_p->next = node;
+	return(new_node_p);
+}
+
+node_t *lines[n_lines];
 const int connections[][2] = {{0,1},{0,2}};
 
 //const Point2d stations[] = {{100,20},{400,300},{200,400},{90,30}};
@@ -164,19 +177,16 @@ int main(int argc, char* argv[]){
 		for(int i = 0; i<n_lines; i++ ){
 			bool first = true;
 			int prev = 0;
-			for(int station_i: lines[i]){
-				cout << "station:"<< station_i << endl;
-				if(station_i == 2){
-					i = i;
-				}
+			node_t* head = lines[i];
+			while(head){
 				if(first){
 					first = false;
 				}
 				else{
 				float x0 = stations[prev].x;
 				float y0 = stations[prev].y;
-				float x1 = stations[station_i].x;
-				float y1 = stations[station_i].y;
+				float x1 = stations[head->value].x;
+				float y1 = stations[head->value].y;
 
 
 				//calculate distance from line to mouse only if it the mouse is in its box
@@ -209,7 +219,9 @@ int main(int argc, char* argv[]){
 
 
 				}}
-				prev = station_i;
+				prev = head->value;
+
+				head = head->next;
 
 			}
 		}}
@@ -218,17 +230,18 @@ int main(int argc, char* argv[]){
 			int prev = 0;
 
 			bool hovering = i == closest_line_index;
-			for(int station_i: lines[i]){
+			node_t* head = lines[i];
+			while(head){
 
 				if(first){
-					prev = station_i;
+					prev = head->value;
 					first = false;
 				}
 				else{
 				float x0 = stations[prev].x;
 				float y0 = stations[prev].y;
-				float x1 = stations[station_i].x;
-				float y1 = stations[station_i].y;
+				float x1 = stations[head->value].x;
+				float y1 = stations[head->value].y;
 
 
 				//calculate distance from line to mouse only if it the mouse is in its box
@@ -269,8 +282,9 @@ int main(int argc, char* argv[]){
 				}
 				else
 					trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 255);
-				prev = station_i;
+				prev = head->value;
 				}
+				head = head->next;
 			}
 		}
 		//draw staions
@@ -280,7 +294,8 @@ int main(int argc, char* argv[]){
 					if(mouse.click){
 						if(mouse.mode != LINE)
 							line_i++;
-						lines[line_i].push_back(station.id);
+						lines[line_i] = add_node_before( lines[line_i]);
+						lines[line_i]->value = station.id;
 						mouse.mode = LINE;
 					}
 			}else
