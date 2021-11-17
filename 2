@@ -23,11 +23,11 @@ typedef struct {
 
 const COLOUR line_colours[]={
 {255,0,255},
+{0,0,0},
 {255,0,0},
 {0,255,0},
 {255,255,0},
 {0,0,255},
-{0,0,0},
 {0,255,255}};
 
 class MOUSE{
@@ -53,8 +53,6 @@ typedef struct{
 	int id;
 }Point2d;
 
-const float STATION_WAIT_TIME = 0.1;
-
 float distance2d(Point2d a, Point2d b){
 	return(sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y, 2)));
 }
@@ -73,12 +71,12 @@ struct node{
 node_t* add_node_before(node_t* node){
 	node_t *new_node_p  = (node_t*)malloc(sizeof(node_t));
 	new_node_p->links[NEXT] = node;
-	new_node_p->links[PREV] = NULL;
 	if(node)
 		node->links[PREV] = new_node_p;
 	return(new_node_p);
 }
 
+node_t *lines[n_lines];
 const int connections[][2] = {{0,1},{0,2}};
 
 //const Point2d stations[] = {{100,20},{400,300},{200,400},{90,30}};
@@ -93,19 +91,15 @@ void must_init(bool succeeded, string message){
 }
 
 class TRAIN{
-	public:
-
-	bool initialised =false;
-
 	private:
 	enum {AT_STATION, ON_LINE} location_type = AT_STATION;
 	LINK_DIRECTION direction;
 	
 	int station_id;
-	float waiting_time_seconds = STATION_WAIT_TIME;
+	float waiting_time_seconds = 0.001;
 
 	node_t* start_line;
-	float velocity = 1;
+	float velocity = 5;
 
 	float width = 10;
 	float height = 20;
@@ -119,16 +113,10 @@ class TRAIN{
 	float x,y;
 	public:
 	void draw(SDL_Renderer* renderer,transform& trans){
-		transform train_trans;
-	        train_trans.m = identity;
-		train_trans.rotate(atan(slope)+M_PI/2);
-		train_trans.translate(x, y);
-		train_trans.m = matrix_mul(trans.m,train_trans.m);
-		train_trans.drawrectangle(renderer, -width, -height, width, height, 0,0,0,255);
+		trans.drawrectangle(renderer, x-width, y-height, x+width, y+height, 0,0,0,255);
 	}
 
 	void init(node_t* start_station, LINK_DIRECTION in_direction){
-		initialised = true;
 		start_line = start_station;
 		station_id = start_line->value;
 		direction = in_direction;
@@ -154,10 +142,7 @@ class TRAIN{
 			break;
 				
 		case(ON_LINE):
-			cout << "train at station: " << station_id << endl;
 			float dx = sqrt( velocity/(slope*slope+1) );
-			if(x1-x0<0)
-				dx = -dx;
 			float dy = slope*dx;
 			x+=dx;
 			y+=dy;
@@ -167,7 +152,7 @@ class TRAIN{
 			    (y-y0)/(y1-y0) >1){
 				station_id = start_line->value;
 				location_type = AT_STATION;
-				waiting_time_seconds = STATION_WAIT_TIME;
+				waiting_time_seconds = 5;
 				if(!start_line->links[direction])
 						direction = direction ? PREV : NEXT;
 			}
@@ -175,13 +160,6 @@ class TRAIN{
 	}
 };
 
-typedef struct{
-	node_t* stations;
-	TRAIN train;
-	int length=0;
-}LINE_T;
-
-LINE_T lines[n_lines];
 
 int main(int argc, char* argv[]){
 	SDL_Window *window = NULL;
@@ -211,6 +189,15 @@ int main(int argc, char* argv[]){
 
 	int line_i = 0;
 
+	TRAIN first_train;
+	lines[0] = add_node_before(lines[0]);
+	lines[0] = add_node_before(lines[0]);
+	stations.push_back({10, 10, (int)stations.size()});
+	stations.push_back({100, 100, (int)stations.size()});
+	lines[0]->value=stations[0].id;
+	lines[0]->links[NEXT]->value=stations[1].id;
+
+	first_train.init(lines[0], NEXT);
 
 
 	while(running){
@@ -277,7 +264,7 @@ int main(int argc, char* argv[]){
 		for(int i = 0; i<n_lines; i++ ){
 			bool first = true;
 			int prev = 0;
-			node_t* head = lines[i].stations;
+			node_t* head = lines[i];
 			while(head){
 				if(first){
 					first = false;
@@ -330,13 +317,7 @@ int main(int argc, char* argv[]){
 			int prev = 0;
 
 			bool hovering = i == closest_line_index;
-			node_t* head = lines[i].stations;
-
-			if(lines[i].train.initialised && lines[i].length >= 2){
-				lines[i].train.move(1/framerate);
-				lines[i].train.draw(renderer, trans);
-			}
-
+			node_t* head = lines[i];
 			while(head){
 
 				if(first){
@@ -372,11 +353,8 @@ int main(int argc, char* argv[]){
 					if(mouse.click){
 						if(mouse.mode != LINE)
 							line_i++;
-						lines[line_i].stations = add_node_before( lines[line_i].stations);
-						lines[line_i].length +=1;
-						lines[line_i].stations->value = station.id;
-						if(lines[line_i].length >=2 && !lines[line_i].train.initialised)
-							lines[line_i].train.init(lines[line_i].stations, NEXT);
+						lines[line_i] = add_node_before( lines[line_i]);
+						lines[line_i]->value = station.id;
 						mouse.mode = LINE;
 					}
 			}else
@@ -385,6 +363,8 @@ int main(int argc, char* argv[]){
 		if(mouse.click && mouse.mode==STATION)
 			stations.push_back({mouse.x-camera_x, mouse.y-camera_y, (int)stations.size()});
 		
+		first_train.move(1/framerate);
+		first_train.draw(renderer, trans);
 
 		//draw connections
 
