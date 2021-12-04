@@ -51,11 +51,40 @@ typedef struct{
 	int id;
 }Point2d;
 
-const float STATION_WAIT_TIME = 0.1;
-
 float distance2d(Point2d a, Point2d b){
 	return(sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y, 2)));
 }
+
+float distance_line_to_point(Point2d point, Point2d line1, Point2d line2){
+	float distance =MAXFLOAT;
+	if( !
+		((point.x >= 10+line1.x && point.x >= 10+line2.x) ||
+		(point.x <= -10+line1.x && point.x <= -10+line2.x) ||
+		(point.y >= 10+line1.y && point.y >= 10+line2.y) ||
+		(point.y <= -10+line1.y && point.y <= -10+line2.y))
+		){
+
+	
+		float slope = (line2.y-line1.y)/(line2.x-line1.x);
+		float slope_perpendicular = -1/slope;
+		float start_perpendicular = (line1.x-point.x)*slope_perpendicular+point.y;
+
+		//The points where the distance to the line will be measured
+		//from.
+		float distance_x = (start_perpendicular-line1.y)/(slope-slope_perpendicular)+line1.x;
+		float distance_y = slope*(distance_x-line1.x)+line1.y;
+		
+		distance = distance2d({distance_x, distance_y, 0}, {point.x, point.y, 0});
+		
+
+
+	}
+	return(distance);
+
+}
+
+const float STATION_WAIT_TIME = 0.1;
+
 
 const int n_lines =7;
 
@@ -83,6 +112,20 @@ node_t* add_node_before(node_t* node){
 	return(new_node_p);
 }
 
+node_t* add_node_after(node_t* node){
+	node_t *new_node_p  = (node_t*)malloc(sizeof(node_t));
+	new_node_p->links[PREV] = node;
+	if(node){
+		new_node_p->links[NEXT] = node->links[NEXT];
+		if(node->links[NEXT])
+			node->links[NEXT]->links[PREV] = new_node_p;
+		node->links[NEXT] = new_node_p;
+	}else{
+		new_node_p->links[NEXT] = NULL;
+	}
+
+	return(new_node_p);
+}
 const int connections[][2] = {{0,1},{0,2}};
 
 vector<Point2d> stations;
@@ -106,9 +149,22 @@ class BUFFER{
 	float middle_y;
 	float bottom_x;
 	float bottom_y;
+
+	Point2d station1_tmp;
+	Point2d station2_tmp;
+
 	
-	public:	
+	public:
+	bool hovering;
+	bool created = false;
 	void create(Point2d station1, Point2d station2){
+		station1_tmp = station1;
+		station2_tmp = station2;
+		created =true;
+		bottom_x = station1.x;
+		bottom_y = station1.y;
+
+
 		float dy = station1.y - station2.y;
 		float dx = station1.x - station2.x;
 
@@ -120,19 +176,38 @@ class BUFFER{
 		middle_x = station1.x + norm_dx*20;
 		middle_y = station1.y + norm_dy*20;
 		
-		left_x = middle_x - norm_dy*20;
-		left_y = middle_y + norm_dx*20;
+		left_x = middle_x - norm_dy*10;
+		left_y = middle_y + norm_dx*10;
 		
-		right_x = middle_x + norm_dy*20;
-		right_y = middle_y - norm_dx*20;
+		right_x = middle_x + norm_dy*10;
+		right_y = middle_y - norm_dx*10;
 	}
-
-	void draw(SDL_Renderer* renderer,transform& trans, COLOUR colour){
-		trans.drawline(renderer, bottom_x, bottom_y, middle_x,
-				middle_y, 8,colour.r, colour.g, colour.b, 255);
-		trans.drawline(renderer, left_x, left_y, right_x,
-				right_y, 8,colour.r, colour.g, colour.b, 255);
-
+	bool handle_mouse(float mouse_x, float mouse_y){
+		hovering=(
+				distance_line_to_point({mouse_x, mouse_y, 0},
+					{left_x, left_y, 0}, {right_x, right_y,
+					0})<10
+				||
+				distance_line_to_point({mouse_x, mouse_y, 0},
+					{bottom_x,
+					bottom_y, 0}, {bottom_x, bottom_y, 0})<10
+		      );
+		return(hovering);
+	}
+	void draw(SDL_Renderer* renderer,transform& trans, COLOUR colour, float mouse_x, float mouse_y){
+		if(!created)
+			return;
+		if(handle_mouse(mouse_x, mouse_y)){
+			trans.drawline(renderer, bottom_x, bottom_y, middle_x,
+					middle_y, 8,0,0,0,255);
+			trans.drawline(renderer, left_x, left_y, right_x,
+					right_y, 8,0,0,0,255);
+		}else{
+			trans.drawline(renderer, bottom_x, bottom_y, middle_x,
+					middle_y, 8,colour.r, colour.g, colour.b, 255);
+			trans.drawline(renderer, left_x, left_y, right_x,
+					right_y, 8,colour.r, colour.g, colour.b, 255);
+		}
 
 	}
 };
@@ -242,14 +317,16 @@ typedef struct{
 
 
 class LINE{
+	node_t* first_station;
+	node_t* last_station;
 	public:
-	node_t* station_nodes;
 	TRAIN train;
 	int length=0;
 	BUFFER bufferstop1;
 	BUFFER bufferstop2;
 	COLOUR colour;
 	node_t* selected;
+	LINK_DIRECTION select_direction=NEXT;
 	node_t* hovering;
 	
 	
@@ -257,21 +334,45 @@ class LINE{
 	void create(COLOUR new_colour){
 		colour = new_colour;
 	}
+	//make sure the station is already put in the right list when you add it
 	void click_add(int station_id){
-		selected = add_node_before(selected);
-		if(!selected->links[PREV])
-			station_nodes = selected;
+		if(select_direction==NEXT)
+			selected = add_node_before(selected);
+		else
+			selected = add_node_after(selected);
+
 		selected->value = station_id;
 		length +=1;
+		if(!selected->links[PREV]){
+			first_station = selected;
+		}
+		if(!selected->links[NEXT]){
+			last_station = selected;
+		}
 		if(length >=2 && !train.initialised)
-			train.init(station_nodes, NEXT);
+			train.init(first_station, NEXT);
+
+		if(!first_station->links[PREV] && length>=2){
+			bufferstop1.create(stations[first_station->value], stations[first_station->links[NEXT]->value]);
+		}
+		if(!last_station->links[NEXT] && length>=2){
+			bufferstop2.create(stations[last_station->value], stations[last_station->links[PREV]->value]);
+		}
 	}
 
 	void click_select(){
 		if(hovering){
+			select_direction = NEXT;
 			selected = hovering;
+		}else if(bufferstop1.hovering){
+			select_direction = NEXT;
+			selected = first_station;
+		}else if(bufferstop2.hovering){
+			select_direction = PREV;
+			selected = last_station;
 		}else{
-			selected = station_nodes;
+			select_direction = NEXT;
+			selected = first_station;
 		}
 	}
 	void unselect(){
@@ -283,7 +384,7 @@ class LINE{
 		
 		bool first = true;
 		int prev = 0;
-		node_t* head = station_nodes;
+		node_t* head = first_station;
 		int closest_line_distance=INT_MAX;
 		bool return_val=false;
 		while(head){
@@ -297,51 +398,33 @@ class LINE{
 			float y1 = stations[head->value].y;
 
 			//calculate distance from line to mouse only if it the mouse is in its box
-			if( !
-				((mouse_x >= 10+x0 && mouse_x >= 10+x1) ||
-				(mouse_x <= -10+x0 && mouse_x <= -10+x1) ||
-				(mouse_y >= 10+y0 && mouse_y >= 10+y1) ||
-				(mouse_y <= -10+y0 && mouse_y <= -10+y1))
-				){
-
-			
-				float slope = (y1-y0)/(x1-x0);
-				float slope_perpendicular = -1/slope;
-				float start_perpendicular = (x0-mouse_x)*slope_perpendicular+mouse_y;
-
-				//The points where the distance to the line will be measured
-				//from.
-				float distance_x = (start_perpendicular-y0)/(slope-slope_perpendicular)+x0;
-				float distance_y = slope*(distance_x-x0)+y0;
-				
-				float distance = distance2d({distance_x, distance_y, 0}, {mouse_x, mouse_y, 0});
-				//cout << "mouse x,y:" << mouse_x << " " << mouse_y << endl;
-				if(distance<closest_line_distance&&distance<10){
-					return_val = true;
-					hovering= head;
-					closest_line_distance = distance;
-				}
-
-
-			}}
+			float distance = distance_line_to_point({mouse_x,mouse_y, 0}, {x0,y0,0},{x1,y1,0});
+			if(distance<closest_line_distance&&distance<10){
+				return_val = true;
+				hovering= head;
+				closest_line_distance = distance;
+			}
+			}
 			prev = head->value;
 
 			head = head->links[NEXT];
 
 		}
+		return_val = return_val || bufferstop1.handle_mouse(mouse_x, mouse_y)
+			|| bufferstop2.handle_mouse(mouse_x, mouse_y);
+
 		return(return_val);
 	}
 	void draw(SDL_Renderer* renderer,transform& trans,
-			int mouse_x, int mouse_y){
+			float mouse_x, float mouse_y){
 		bool first = true;
 		int prev = 0;
 
-		node_t* head = station_nodes;
+		bufferstop1.draw(renderer, trans, colour, mouse_x, mouse_y);
+		bufferstop2.draw(renderer, trans, colour, mouse_x, mouse_y);
 
-		if(train.initialised && length >= 2){
-			train.move(1/framerate);
-			train.draw(renderer, trans);
-		}
+		node_t* head = first_station;
+
 
 		while(head){
 
@@ -364,7 +447,15 @@ class LINE{
 			float y1 = stations[head->value].y;
 
 
-			if(selected == head){
+			if(selected == head && select_direction == PREV){
+				trans.drawline(renderer, stations[head->value].x, 
+						stations[head->value].y, mouse_x, 
+						mouse_y, 8,colour.r, colour.g, colour.b, 255);
+				trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 255);
+				trans.drawcircle(renderer, mouse_x, mouse_y, 8, 255, 0, 0, 255);
+			}
+
+			else if(selected == head){
 				trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 127);
 				trans.drawline(renderer, x0, y0, mouse_x, mouse_y, 8,colour.r, colour.g, colour.b, 255);
 				trans.drawline(renderer, mouse_x, mouse_y, x1, y1, 8,colour.r, colour.g, colour.b, 255);
@@ -379,6 +470,10 @@ class LINE{
 			prev = head->value;
 			}
 			head = head->links[NEXT];
+		}
+		if(train.initialised && length >= 2){
+			train.move(1/framerate);
+			train.draw(renderer, trans);
 		}
 	}
 };
@@ -478,64 +573,6 @@ int main(int argc, char* argv[]){
 			}
 		}}
 
-		//int closest_line_distance=INT_MAX;
-		//loop through all lines to see which one the mouse is nearest to
-		/*if(!hovering.type){
-		int count = 0;
-		for(LINE line : lines){
-			bool first = true;
-			int prev = 0;
-			node_t* head = line.station_nodes;
-			while(head){
-				if(first){
-					first = false;
-				}
-				else{
-				float x0 = stations[prev].x;
-				float y0 = stations[prev].y;
-				float x1 = stations[head->value].x;
-				float y1 = stations[head->value].y;
-
-
-				//calculate distance from line to mouse only if it the mouse is in its box
-				if( !
-					((mouse.x-camera_x >= 10+x0 && mouse.x-camera_x >= 10+x1) ||
-					(mouse.x-camera_x <= -10+x0 && mouse.x-camera_x <= -10+x1) ||
-					(mouse.y-camera_y >= 10+y0 && mouse.y-camera_y >= 10+y1) ||
-					(mouse.y-camera_y <= -10+y0 && mouse.y-camera_y <= -10+y1))
-					){
-
-					cout << "in box"<< endl;
-				
-					float slope = (y1-y0)/(x1-x0);
-					float slope_perpendicular = -1/slope;
-					float start_perpendicular = (x0-(mouse.x-camera_x))*slope_perpendicular+mouse.y-camera_y;
-
-					//The points where the distance to the line will be measured
-					//from.
-					float distance_x = (start_perpendicular-y0)/(slope-slope_perpendicular)+x0;
-					float distance_y = slope*(distance_x-x0)+y0;
-					
-					float distance = distance2d({distance_x, distance_y, 0}, {mouse.x-camera_x, mouse.y-camera_y, 0});
-					//cout << "Distance:" << distance << ", distance_x,distance_y:" << distance_x << " " << distance_y <<  endl;
-					//cout << "mouse x,y:" << mouse.x << " " << mouse.y << endl;
-					if(distance<closest_line_distance&&distance<10){
-						cout << "found" << endl;
-						hovering.node = head;
-						hovering.type = LINE_OBJECT;
-						hovering.line_i=count;
-						closest_line_distance = distance;
-					}
-
-
-				}}
-				prev = head->value;
-
-				head = head->links[NEXT];
-
-			}
-			count++;
-		}}*/
 		for(int i =0; (unsigned int)i<lines.size(); i++){
 			if(!hovering.type&&lines[i].handle_mouse(mouse.x-camera_x, mouse.y-camera_y)){
 				hovering.type = LINE_OBJECT;
@@ -546,58 +583,6 @@ int main(int argc, char* argv[]){
 				selected.line_i = i;
 			}
 			lines[i].draw(renderer, trans, mouse.x-camera_x, mouse.y-camera_y);
-			/*bool first = true;
-			int prev = 0;
-
-			node_t* head = lines[i].station_nodes;
-
-			if(lines[i].train.initialised && lines[i].length >= 2){
-				lines[i].train.move(1/framerate);
-				lines[i].train.draw(renderer, trans);
-			}
-
-			COLOUR colour = line_colours[i];
-			while(head){
-
-				if(first){
-					prev = head->value;
-					first = false;
-					if(selected.node == head){
-						trans.drawline(renderer, stations[head->value].x, 
-								stations[head->value].y, mouse.x, 
-								mouse.y, 8,colour.r, colour.g, colour.b, 255);
-						trans.drawcircle(renderer, mouse.x, mouse.y, 8, 255, 0, 0, 255);
-					}
-						
-
-				}
-				else{
-				float x0 = stations[prev].x;
-				float y0 = stations[prev].y;
-				float x1 = stations[head->value].x;
-				float y1 = stations[head->value].y;
-
-
-				if(selected.node == head){
-					trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 127);
-					trans.drawline(renderer, x0, y0, mouse.x, mouse.y, 8,colour.r, colour.g, colour.b, 255);
-					trans.drawline(renderer, mouse.x, mouse.y, x1, y1, 8,colour.r, colour.g, colour.b, 255);
-					trans.drawcircle(renderer, mouse.x, mouse.y, 8, 255, 0, 0, 255);
-				}
-
-				else if(hovering.type == LINE_OBJECT && hovering.node == head){
-					trans.drawline(renderer, x0, y0, x1, y1, 8,0, 0, 0, 255);
-					if(mouse.click){
-						selected.node = hovering.node;
-						selected.line_i = hovering.line_i;
-					}
-				}
-				else
-					trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 255);
-				prev = head->value;
-				}
-				head = head->links[NEXT];
-			}*/
 		}
 		//draw staions
 		for(Point2d station : stations){
@@ -607,19 +592,9 @@ int main(int argc, char* argv[]){
 						if(selected.line_i == INT_MAX){
 							lines.resize(lines.size()+1);
 							selected.line_i = lines.size()-1;
-							cout << selected.line_i << endl;
 							lines[lines.size()-1].create(line_colours[selected.line_i]);
 						}
 						lines[lines.size()-1].click_add(station.id);
-						/*selected.node = add_node_before(selected.node);
-						if(!selected.node->links[PREV])
-							lines[selected.line_i].station_nodes = selected.node;
-						selected.node->value = station.id;
-						lines[selected.line_i].length +=1;
-						if(lines[selected.line_i].length >=2 && !lines[selected.line_i].train.initialised)
-							lines[lines.size()-1].train.init(lines[lines.size()-1].station_nodes, NEXT);*/
-						//selected.node = lines[line_i].stations;
-						//selected.line_i = line_i;
 					}
 			}else
 				trans.drawcircle(renderer, station.x, station.y, 8, 255, 0, 0, 255);
@@ -630,14 +605,9 @@ int main(int argc, char* argv[]){
 		if(mouse.click && selected.line_i!=INT_MAX && !hovering.type){
 			Point2d station = {mouse.x-camera_x, mouse.y-camera_y, (int)stations.size()};
 
+			stations.push_back(station);
 			lines[selected.line_i].click_add(station.id);
 	
-			/*selected.lines = add_node_before(selected.node);
-			lines[selected.line_i].length +=1;
-			if(!selected.node->links[PREV])
-				lines[selected.line_i].station_nodes = selected.node;
-			selected.node->value = station.id;*/
-			stations.push_back(station);
 		}
 		
 		
