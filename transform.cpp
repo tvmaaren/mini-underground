@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 
-#include "transform.h"
+#include "transform.hpp"
 
 
 void transform::drawline(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, int thickness,
