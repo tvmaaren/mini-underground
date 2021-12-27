@@ -34,6 +34,10 @@ class TRAIN{
 	private:
 	enum {AT_STATION, ON_LINE} location_type = AT_STATION;
 	LINK_DIRECTION direction;
+
+	int passengers=0;
+	int am_passengers_per_type[2]={0,0};
+	int max_passengers=4;
 	
 	int station_id;
 	float waiting_time_seconds = STATION_WAIT_TIME;
@@ -43,6 +47,7 @@ class TRAIN{
 
 	float width = 10;
 	float height = 20;
+	COLOUR colour;
 
 	float x0;
 	float y0;
@@ -54,7 +59,7 @@ class TRAIN{
 	public:
 	void draw(SDL_Renderer* renderer,transform& trans);
 
-	void init(node_t* start_station, LINK_DIRECTION in_direction);
+	void init(node_t* start_station, LINK_DIRECTION in_direction, COLOUR colour_new);
 	void move(float seconds);
 };
 class LINE{

@@ -104,6 +104,10 @@ int main(int argc, char* argv[]){
 	must_init(screen , "get window surface");
 	must_init(window," create window");
 
+	//initialize random generator
+	time_t t;
+	srand((unsigned) time(&t));
+
 	bool running = true;
 
 	Uint32 start_tick;
@@ -194,8 +198,6 @@ int main(int argc, char* argv[]){
 			lines[i].draw(renderer, trans, mouse.x-camera_x, mouse.y-camera_y);
 		}
 		if(stations.size()>=1){
-		time_t t;
-		srand((unsigned) time(&t));
 
 		//draw staions
 		for(unsigned int i =0; i<stations.size(); i++){

@@ -76,17 +76,28 @@ void TRAIN::draw(SDL_Renderer* renderer,transform& trans){
 	train_trans.rotate(atan(slope)+M_PI/2);
 	train_trans.translate(x, y);
 	train_trans.m = matrix_mul(trans.m,train_trans.m);
-	train_trans.drawrectangle(renderer, -width, -height, width, height, 0,0,0,255);
+	train_trans.drawrectangle(renderer, -width, -height, width, height, colour.r,colour.g,colour.b,255);
+
+	int passenger_i=0;
+	for(int i=0; i<am_passengers_per_type[0]; i++){
+		float mid_y = height-height/max_passengers-passenger_i*height*2/max_passengers;
+		train_trans.drawrectangle(renderer, 4,mid_y+4,-4,mid_y-4, 0,0,0, 255);
+		passenger_i++;
+	}
+	for(int i=0; i<am_passengers_per_type[1]; i++){
+		train_trans.drawcircle(renderer, 0, height-height/max_passengers-passenger_i*height*2/max_passengers, 4, 0,0,0, 255);
+		passenger_i++;
+	}
 }
 
-void TRAIN::init(node_t* start_station, LINK_DIRECTION in_direction){
+void TRAIN::init(node_t* start_station, LINK_DIRECTION in_direction, COLOUR colour_new){
 	initialised = true;
 	start_line = start_station;
 	station_id = start_line->value;
 	direction = in_direction;
+	colour = colour_new;
 }
 void TRAIN::move(float seconds){
-	cout << "move train:" <<x<<","<<y<< endl;
 	switch(location_type){
 	case(AT_STATION):
 		x = stations[station_id].pos.x;
@@ -122,6 +133,21 @@ void TRAIN::move(float seconds){
 			waiting_time_seconds = STATION_WAIT_TIME;
 			if(!start_line->links[direction])
 					direction = direction ? PREV : NEXT;
+			//remove passengers
+			SHAPE shape = stations[station_id].shape;
+			passengers-=am_passengers_per_type[shape];
+			am_passengers_per_type[shape]=0;
+
+			//add passsengers
+			int delta;
+			delta=stations[station_id].passenger_leavestation(
+					max_passengers-passengers,SQUARE);
+			am_passengers_per_type[SQUARE]+=delta;
+			passengers+=delta;
+			delta=stations[station_id].passenger_leavestation(
+					max_passengers-passengers,CIRCLE);
+			am_passengers_per_type[CIRCLE]+=delta;
+			passengers+=delta;
 		}
 	}
 }
@@ -146,7 +172,7 @@ void LINE::click_add(int station_id){
 		last_station = selected;
 	}
 	if(length >=2 && !train.initialised)
-		train.init(first_station, NEXT);
+		train.init(first_station, NEXT, colour);
 
 	if(!first_station->links[PREV] && length>=2){
 		bufferstop1.create(stations[first_station->value].pos, stations[first_station->links[NEXT]->value].pos);

@@ -36,6 +36,11 @@ void transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float 
 
 }
 
+void transform::drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a){
+	drawrectangle(renderer, x-radius
+
+	
 void transform::drawcircle(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
 	transform_coordinates(&x, &y);
