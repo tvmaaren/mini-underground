@@ -16,6 +16,8 @@ class transform{
 		int r, int g, int b, int a);
 	void drawrectangle(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, 
 		int r, int g, int b, int a);
+	void drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a);
 	void init();
 	void translate(int x,int y);
 	void rotate(float angle);

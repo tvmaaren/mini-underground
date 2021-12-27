@@ -38,7 +38,8 @@ void transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float 
 
 void transform::drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
-	drawrectangle(renderer, x-radius
+	drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
+}
 
 	
 void transform::drawcircle(SDL_Renderer* renderer, float x, float y, float radius,

@@ -20,12 +20,15 @@ void STATION::draw(SDL_Renderer* renderer,transform& trans, COLOUR colour){
 			break;
 	}
 	
+	int passenger_i = 1;
+	
 	for(int i =1; i<=am_passengers_per_type[SQUARE] ; i++){
-		trans.drawrectangle(renderer, pos.x+20*i+4,
-				pos.y+4,pos.x+20*i-4, pos.y-4,  0, 0, 0, 255);
+		trans.drawrectangle(renderer, pos.x+10*passenger_i+4,
+				pos.y+4,pos.x+10*passenger_i-4, pos.y-4,  0, 0, 0, 255);
+		passenger_i++;
 	}
 	for(int i =1; i<=am_passengers_per_type[CIRCLE] ; i++){
-		trans.drawcircle(renderer, pos.x+20*i, pos.y, 4, 0, 0, 0, 255);
+		trans.drawcircle(renderer, pos.x+10*i, pos.y, 4, 0, 0, 0, 255);
 	}
 }
 
