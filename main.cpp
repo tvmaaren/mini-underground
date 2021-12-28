@@ -6,6 +6,8 @@
 #include <math.h>
 #include <climits>
 
+using namespace std;
+
 #include "transform.hpp"
 #include "types.hpp"
 #include "misc.hpp"
@@ -13,7 +15,6 @@
 #include "stations.hpp"
 #include "settings.hpp"
 
-using namespace std;
 
 
 
@@ -53,7 +54,8 @@ typedef struct node node_t;
 
 const int connections[][2] = {{0,1},{0,2}};
 
-vector<STATION> stations;
+//vector<STATION> stations;
+STATION_LIST stations;
 
 void must_init(bool succeeded, string message){
 	if(!succeeded){
@@ -113,8 +115,12 @@ int main(int argc, char* argv[]){
 	Uint32 start_tick;
 	SDL_Event event;
 
-	float camera_x= 0;
-	float camera_y= 0;
+	float camera_x= screen_width/2;
+	float camera_y= screen_height/2;
+
+	stations.random_add();
+	stations.random_add();
+	stations.random_add();
 
 
 	MOUSE mouse;
@@ -177,15 +183,9 @@ int main(int argc, char* argv[]){
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 		//Check if the mouse is hovering above a station
-		if(!hovering.type){
-		for(STATION station : stations){
-			if(pow( station.pos.x-(mouse.x-camera_x),2) + 
-					pow(station.pos.y-(mouse.y-camera_y),2)< 100 ){
-				hovering.type = STATION_OBJECT;
-				hovering.station_id = station.id;
-			}
-		}}
-
+		if(stations.check_hovering(mouse.x- camera_x, mouse.y -camera_y)){
+			hovering.type = STATION_OBJECT;
+		}
 		for(int i =0; (unsigned int)i<lines.size(); i++){
 			if(!hovering.type&&lines[i].handle_mouse(mouse.x-camera_x, mouse.y-camera_y)){
 				hovering.type = LINE_OBJECT;
@@ -197,37 +197,27 @@ int main(int argc, char* argv[]){
 			}
 			lines[i].draw(renderer, trans, mouse.x-camera_x, mouse.y-camera_y);
 		}
-		if(stations.size()>=1){
-
-		//draw staions
-		for(unsigned int i =0; i<stations.size(); i++){
-			if(frame%framerate==0)
-				stations[i].add_passenger();
-			if((hovering.station_id == stations[i].id) && hovering.type == STATION_OBJECT){
-				stations[i].draw(renderer, trans,{0,255,0});
-				if(mouse.click){
-					if(selected.line_i == INT_MAX){
-						lines.resize(lines.size()+1);
-						selected.line_i = lines.size()-1;
-						lines[lines.size()-1].create(line_colours[selected.line_i]);
-					}
-					lines[selected.line_i].click_add(stations[i].id);
-				}
-			}else{
-				stations[i].draw(renderer, trans,{255,0,0});
-				
+		stations.draw(renderer, trans);
+		if(mouse.click && hovering.type == STATION_OBJECT){
+			if(selected.line_i == INT_MAX){
+				lines.resize(lines.size()+1);
+				selected.line_i = lines.size()-1;
+				lines[lines.size()-1].create(line_colours[selected.line_i]);
 			}
-		}}
+			lines[selected.line_i].click_add(stations.hovering_id);
+		}
+		if(random() < chance_of_a_new_station){
+			stations.random_add();
+		}
 		if(mouse.click && selected.line_i==INT_MAX){
-			stations.resize(stations.size()+1);
-			stations[stations.size()-1].create(mouse.x-camera_x, mouse.y-camera_y, stations.size()-1);
+			stations.add(mouse.x-camera_x, mouse.y-camera_y);
 		}
 		if(mouse.click && selected.line_i!=INT_MAX && !hovering.type){
-			stations.resize(stations.size()+1);
-			stations[stations.size()-1].create(mouse.x-camera_x, mouse.y-camera_y,stations.size()-1);
+			stations.add(mouse.x-camera_x, mouse.y-camera_y);
 
-
-			lines[selected.line_i].click_add(stations[stations.size()-1].id);
+			lines[selected.line_i].click_add(
+				stations.add(mouse.x-camera_x, mouse.y-camera_y)
+			);
 	
 		}
 		

@@ -6,14 +6,14 @@
 #include <math.h>
 #include <climits>
 
+using namespace std;
+
 #include "settings.hpp"
 #include "types.hpp"
 #include "transform.hpp"
 #include "misc.hpp"
 #include "lines.hpp"
 #include "stations.hpp"
-
-using namespace std;
 
 extern vector<STATION> stations;
 
