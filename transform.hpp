@@ -18,6 +18,16 @@ class transform{
 		int r, int g, int b, int a);
 	void drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a);
+	void drawgem(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a);
+	void drawngon(SDL_Renderer* renderer, int n,float start_angle, float x, float y, float radius,
+		int r, int g, int b, int a);
+	void drawtriangle(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a);
+	void drawpentagon(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a);
+	void drawshape(SDL_Renderer* renderer, SHAPE shape, float x, float y, float radius,
+		int r, int g, int b, int a);
 	void init();
 	void translate(int x,int y);
 	void rotate(float angle);

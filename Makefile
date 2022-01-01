@@ -5,7 +5,7 @@ CPPFLAGS=$(libs) -g -Wall
 
 main: main.cpp transform.o misc.o lines.o types.hpp stations.o settings.hpp
 lines.o: lines.cpp transform.o misc.o lines.hpp types.hpp settings.hpp
-stations.o: stations.cpp stations.hpp transform.o settings.hpp
-transform.o: transform.cpp transform.hpp
+stations.o: stations.cpp stations.hpp transform.o settings.hpp types.hpp
+transform.o: transform.cpp transform.hpp types.hpp
 transform.h:
 misc.o: misc.cpp misc.hpp types.hpp

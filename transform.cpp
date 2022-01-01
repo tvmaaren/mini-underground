@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 
+#include "types.hpp"
 #include "transform.hpp"
 
 
@@ -36,16 +37,69 @@ void transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float 
 
 }
 
-void transform::drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
+void transform::drawngon(SDL_Renderer* renderer, int n, float start_angle, float x, float y, float radius,
 		int r, int g, int b, int a){
-	drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
+	float fvertices_x[n];
+	float fvertices_y[n];
+	
+	Sint16 vertices_x[n];
+	Sint16 vertices_y[n];
+
+	for(int i=0; i<n; i++){
+		fvertices_x[i] = cos(2.0/(float)n*M_PI*i+start_angle)*radius+x;
+		fvertices_y[i] = sin(2.0/(float)n*M_PI*i+start_angle)*radius+y;
+		transform_coordinates(fvertices_x+i, fvertices_y+i);
+		vertices_x[i] = fvertices_x[i];
+		vertices_y[i] = fvertices_y[i];
+	}
+	filledPolygonRGBA(renderer, vertices_x, vertices_y, n,r, g, b, a);
 }
 
+void transform::drawtriangle(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a){
+	drawngon(renderer, 3,-M_PI/2, x, y, radius, r, g, b, a);
+}
+void transform::drawpentagon(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a){
+	drawngon(renderer, 5,-M_PI/2, x, y, radius, r, g, b, a);
+}
+
+void transform::drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a){
+	//drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
+	drawngon(renderer, 4,M_PI/4, x, y, radius, r, g, b, a);
+}
+void transform::drawgem(SDL_Renderer* renderer, float x, float y, float radius,
+		int r, int g, int b, int a){
+	//drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
+	drawngon(renderer, 4,0, x, y, radius, r, g, b, a);
+}
 	
 void transform::drawcircle(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
 	transform_coordinates(&x, &y);
 	filledCircleRGBA(renderer, x, y, radius, r, g, b, a);
+}
+
+void transform::drawshape(SDL_Renderer* renderer, SHAPE shape, float x, float y, float radius,
+		int r, int g, int b, int a){
+	switch(shape){
+		case(SQUARE):
+			drawsquare(renderer, x,y,radius,r,g,b,a);
+			break;
+		case(CIRCLE):
+			drawcircle(renderer, x,y,radius,r,g,b,a);
+			break;
+		case(TRIANGLE):
+			drawtriangle(renderer, x,y,radius,r,g,b,a);
+			break;
+		case(PENTAGON):
+			drawpentagon(renderer, x,y,radius,r,g,b,a);
+			break;
+		case(GEM):
+			drawgem(renderer, x,y,radius,r,g,b,a);
+			break;
+	}
 }
 
 Matrix matrix_mul(Matrix A,Matrix B){

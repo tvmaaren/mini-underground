@@ -16,25 +16,14 @@ using namespace std;
 
 
 void STATION::draw(SDL_Renderer* renderer,transform& trans, COLOUR colour){
-	switch(shape){
-		case(SQUARE):
-			trans.drawrectangle(renderer, pos.x+8, pos.y+8, pos.x-8, pos.y-8, colour.r, colour.g, colour.b, 255);
-			break;
-		case(CIRCLE):
-			trans.drawcircle(renderer, pos.x, pos.y, 8, colour.r, colour.g, colour.b, 255);
-			break;
-	}
+	trans.drawshape(renderer, shape, pos.x, pos.y, 8, colour.r, colour.g, colour.b, 255);
 	
 	int passenger_i = 1;
-	
-	for(int i =1; i<=am_passengers_per_type[SQUARE] ; i++){
-		trans.drawrectangle(renderer, pos.x+10*passenger_i+4,
-				pos.y+4,pos.x+10*passenger_i-4, pos.y-4,  0, 0, 0, 255);
-		passenger_i++;
-	}
-	for(int i =1; i<=am_passengers_per_type[CIRCLE] ; i++){
-		trans.drawcircle(renderer, pos.x+10*passenger_i, pos.y, 4, 0, 0, 0, 255);
-		passenger_i++;
+	for(int i = 0; i<shapes; i++){
+		for(int ii =1; ii<=am_passengers_per_type[i] ; ii++){
+			trans.drawshape(renderer, int_to_shape(i), pos.x+10*passenger_i, pos.y, 4, 0, 0, 0, 255);
+			passenger_i++;
+		}
 	}
 }
 
@@ -72,7 +61,7 @@ void STATION::add_passenger(){
 	//maybe add a passenger
 	if(rand() < chance_of_a_new_passenger){
 		am_passengers++;
-		am_passengers_per_type[rand()%2]++;
+		am_passengers_per_type[rand()%shapes]++;
 	}
 	
 	
@@ -81,15 +70,17 @@ void STATION::create(float x, float y, int new_id){
 	pos.x = x;
 	id = new_id;
 	pos.y = y;
-	
-	switch(rand()%2){
-		case(0):
-			shape = SQUARE;
-			break;
-		case(1):
-			shape = CIRCLE;
-			break;
+
+	for(int i=0; i<shapes; i++){
+		am_passengers_per_type[i]=0;
 	}
+	
+	shape = int_to_shape(rand()%shapes);
+}
+bool STATION::is_hovering(float mouse_x, float mouse_y){
+	return(
+		pow( pos.x-mouse_x,2) + pow(pos.y-mouse_y,2) < 100
+	);
 }
 
 //returns id of the new station
@@ -130,8 +121,7 @@ int STATION_LIST::random_add(){
 }
 bool STATION_LIST::check_hovering(float mouse_x, float mouse_y){
 	for(STATION station : stations){
-		if(pow( station.pos.x-mouse_x,2) + 
-				pow(station.pos.y-mouse_y,2)< 100 ){
+		if(station.is_hovering(mouse_x,mouse_y)){
 			hovering = true;
 			hovering_id = station.id;
 			return true;

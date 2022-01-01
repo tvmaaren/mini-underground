@@ -63,3 +63,20 @@ node_t* add_node_after(node_t* node){
 
 	return(new_node_p);
 }
+
+SHAPE int_to_shape(int in){
+	switch(in){
+		case(0):
+			return SQUARE;
+		case(1):
+			return CIRCLE;
+		case(2):
+			return TRIANGLE;
+		case(3):
+			return PENTAGON;
+		case(4):
+			return GEM;
+		
+	}
+	return SQUARE;//dummy
+}

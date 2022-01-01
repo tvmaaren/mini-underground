@@ -8,8 +8,8 @@
 
 using namespace std;
 
-#include "transform.hpp"
 #include "types.hpp"
+#include "transform.hpp"
 #include "misc.hpp"
 #include "lines.hpp"
 #include "stations.hpp"
@@ -77,7 +77,6 @@ typedef struct {
 typedef struct{
 	int line_i=INT_MAX;
 }selection_pointer;
-
 
 typedef struct{
 	node_t* stations;
@@ -155,10 +154,7 @@ int main(int argc, char* argv[]){
 
 		mouse.update();
 
-
-
 		//initialize line list
-	
 
 		start_tick = SDL_GetTicks();
 

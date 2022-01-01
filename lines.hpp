@@ -36,7 +36,7 @@ class TRAIN{
 	LINK_DIRECTION direction;
 
 	int passengers=0;
-	int am_passengers_per_type[2]={0,0};
+	int am_passengers_per_type[shapes];
 	int max_passengers=4;
 	
 	int station_id;
