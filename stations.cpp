@@ -57,16 +57,20 @@ int STATION::passenger_leavestation(int room_in_train, SHAPE shape){
 	return(room_in_train);*/
 }
 
-void STATION::add_passenger(){
+void STATION::add_passenger(bool* allowed_shapes){
 	//maybe add a passenger
 	if(rand() < chance_of_a_new_passenger){
+
+		int passenger_shape;
+		do{
+			passenger_shape = rand()%shapes;
+		}while(!allowed_shapes[passenger_shape] && passenger_shape!=shape );
+		
 		am_passengers++;
-		am_passengers_per_type[rand()%shapes]++;
+		am_passengers_per_type[passenger_shape]++;
 	}
-	
-	
 }
-void STATION::create(float x, float y, int new_id){
+SHAPE STATION::create(float x, float y, int new_id){
 	pos.x = x;
 	id = new_id;
 	pos.y = y;
@@ -74,8 +78,8 @@ void STATION::create(float x, float y, int new_id){
 	for(int i=0; i<shapes; i++){
 		am_passengers_per_type[i]=0;
 	}
-	
 	shape = int_to_shape(rand()%shapes);
+	return shape;
 }
 bool STATION::is_hovering(float mouse_x, float mouse_y){
 	return(
@@ -86,7 +90,10 @@ bool STATION::is_hovering(float mouse_x, float mouse_y){
 //returns id of the new station
 int STATION_LIST::add(float x, float y){
 	stations.resize(stations.size()+1);
-	stations[stations.size()-1].create(x, y, stations.size()-1);
+
+	SHAPE shape = stations[stations.size()-1].create(x, y, stations.size()-1);
+	used_shape[shape]=true;
+
 	if(x>max_station_x)
 		max_station_x=x;
 	if(y>max_station_y)
@@ -136,7 +143,7 @@ if(stations.size()>=1){
 
 	//draw staions
 	for(unsigned int i =0; i<stations.size(); i++){
-		stations[i].add_passenger();
+		stations[i].add_passenger(used_shape);
 		if((hovering_id == stations[i].id) && hovering){
 			stations[i].draw(renderer, trans,{0,255,0});
 		}else{
@@ -144,4 +151,10 @@ if(stations.size()>=1){
 			
 		}
 	}}
+}
+
+void STATION_LIST::init(){
+	for(int i=0; i<shapes; i++){
+		used_shape[i]=false;
+	}
 }

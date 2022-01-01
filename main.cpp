@@ -105,6 +105,8 @@ int main(int argc, char* argv[]){
 	must_init(screen , "get window surface");
 	must_init(window," create window");
 
+	stations.init();
+
 	//initialize random generator
 	time_t t;
 	srand((unsigned) time(&t));

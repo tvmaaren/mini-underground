@@ -7,8 +7,8 @@ class STATION{
 	int id;
 	int randomval;
 	void draw(SDL_Renderer* renderer,transform& trans, COLOUR colour);
-	void create(float x, float y, int id);
-	void add_passenger();
+	SHAPE create(float x, float y, int id);
+	void add_passenger(bool* allowed_shapes);
 	SHAPE shape;
 	int passenger_leavestation(int room_in_train, SHAPE shape);
 	int am_passengers_per_type[shapes];
@@ -22,6 +22,7 @@ class STATION_LIST{
 		float min_station_x=0;
 		float min_station_y=0;
 		bool hovering;//true if mouse is hovering above a station
+		bool used_shape[shapes];
 	public:
 		vector<STATION> stations;
 		int hovering_id;
@@ -29,5 +30,6 @@ class STATION_LIST{
 		int random_add();
 		bool check_hovering(float mouse_x, float mouse_y);
 		void draw(SDL_Renderer* renderer, transform& trans);
+		void init();
 
 };
