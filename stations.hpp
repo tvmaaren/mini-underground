@@ -2,7 +2,6 @@ class STATION{
 	private:
 	public:
 	int am_passengers=0;
-	//int am_passengers_per_type[shapes];
 	Point2d pos;
 	int id;
 	int randomval;
@@ -13,17 +12,17 @@ class STATION{
 	int passenger_leavestation(int room_in_train, SHAPE shape);
 	int am_passengers_per_type[shapes];
 	bool is_hovering(float mouse_x, float mouse_y);
+	vector<node_t*> nodes;
 };
 
 class STATION_LIST{
-	private:
+	public:
 		float max_station_x=0;
 		float max_station_y=0;
 		float min_station_x=0;
 		float min_station_y=0;
 		bool hovering;//true if mouse is hovering above a station
 		bool used_shape[shapes];
-	public:
 		vector<STATION> stations;
 		int hovering_id;
 		int add(float x, float y);

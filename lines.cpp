@@ -14,6 +14,7 @@ using namespace std;
 #include "misc.hpp"
 #include "lines.hpp"
 #include "stations.hpp"
+#include "passengers.hpp"
 
 extern STATION_LIST stations;
 
@@ -134,22 +135,63 @@ void TRAIN::move(float seconds){
 			waiting_time_seconds = STATION_WAIT_TIME;
 			if(!start_line->links[direction])
 					direction = direction ? PREV : NEXT;
-			//remove passengers
+			//remove passengers from train
 			SHAPE shape = stations.stations[station_id].shape;
 			passengers-=am_passengers_per_type[shape];
 			am_passengers_per_type[shape]=0;
 
+			//remove passsengers from train
+			//and add to station
+			for(int i=0; i<shapes; i++){
+				if(should_leave(int_to_shape(i), station_id)){
+					
+					stations.stations[station_id].am_passengers_per_type[i]+=
+						am_passengers_per_type[i];
+					stations.stations[station_id].am_passengers+=
+						am_passengers_per_type[i];
+					passengers-=am_passengers_per_type[i];
+					am_passengers_per_type[i]=0;
+				}
+			}
+			
+
 			//add passsengers
 			int delta;
 			for(int i=0; i<shapes; i++){
-				delta=stations.stations[station_id].passenger_leavestation(
-						max_passengers-passengers,int_to_shape(i));
-				am_passengers_per_type[i]+=delta;
-				passengers+=delta;
+				if(!stations.used_shape[i])
+					continue;
+				if(stations.stations[station_id].am_passengers_per_type[i]==0)
+					continue;
+				if(should_enter(int_to_shape(i), station_id)){
+					delta=stations.stations[station_id].passenger_leavestation(
+							max_passengers-passengers,int_to_shape(i));
+					am_passengers_per_type[i]+=delta;
+					passengers+=delta;
+				}
 			}
 		}
 	}
 }
+//Returns true if the passengers of shape %shape% should leave the train
+bool TRAIN::should_leave(SHAPE shape, int station_id){
+	return(!should_enter(shape, station_id));
+}
+
+//Returns true if the passengers of shape %shape% at station %station_id% should
+//enter train %train%
+bool TRAIN::should_enter(SHAPE shape, int station_id){
+	//compare the minimum distance of the next station
+	//to the current station
+	
+	int dist_current_station = min_distance_stations(shape, station_id, NULL);
+	int next_station = start_line->
+		links[direction]->value;
+
+	int dist_next_station = min_distance_stations(shape, next_station, NULL);
+
+	return(dist_next_station<=dist_current_station);
+}
+
 void LINE::create(COLOUR new_colour){
 	colour = new_colour;
 }
@@ -161,6 +203,8 @@ void LINE::click_add(int station_id){
 		selected = add_node_after(selected);
 
 	selected->value = station_id;
+	stations.stations[station_id].nodes.push_back(selected);
+
 	length +=1;
 	if(!selected->links[PREV]){
 		first_station = selected;

@@ -31,11 +31,10 @@ class TRAIN{
 
 	bool initialised =false;
 
-	private:
 	enum {AT_STATION, ON_LINE} location_type = AT_STATION;
 	LINK_DIRECTION direction;
 
-	int passengers=0;
+	int passengers;
 	int am_passengers_per_type[shapes];
 	int max_passengers=4;
 	
@@ -56,11 +55,12 @@ class TRAIN{
 	float slope;
 
 	float x,y;
-	public:
 	void draw(SDL_Renderer* renderer,transform& trans);
 
 	void init(node_t* start_station, LINK_DIRECTION in_direction, COLOUR colour_new);
 	void move(float seconds);
+	bool should_enter(SHAPE shape, int station_id);
+	bool should_leave(SHAPE shape, int station_id);
 };
 class LINE{
 	private:
@@ -76,8 +76,6 @@ class LINE{
 	LINK_DIRECTION select_direction=NEXT;
 	node_t* hovering;
 	
-	
-	public:
 	void create(COLOUR new_colour);
 	//make sure the station is already put in the right list when you add it
 	void click_add(int station_id);

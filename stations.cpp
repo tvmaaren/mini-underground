@@ -12,6 +12,8 @@ using namespace std;
 #include "settings.hpp"
 #include "transform.hpp"
 #include "stations.hpp"
+#include "lines.hpp"
+#include "passengers.hpp"
 
 
 
@@ -47,14 +49,6 @@ int STATION::passenger_leavestation(int room_in_train, SHAPE shape){
 	am_passengers-=ret;
 	return(ret);
 	
-	/*if(room_in_train>=am_passengers){
-		int ret = am_passengers;
-		am_passengers = 0;
-		return(ret);
-	}
-
-	am_passengers-=room_in_train;
-	return(room_in_train);*/
 }
 
 void STATION::add_passenger(bool* allowed_shapes){
@@ -64,7 +58,7 @@ void STATION::add_passenger(bool* allowed_shapes){
 		int passenger_shape;
 		do{
 			passenger_shape = rand()%shapes;
-		}while(!allowed_shapes[passenger_shape] && passenger_shape!=shape );
+		}while(!allowed_shapes[passenger_shape] || passenger_shape==shape );
 		
 		am_passengers++;
 		am_passengers_per_type[passenger_shape]++;
@@ -116,7 +110,7 @@ int STATION_LIST::random_add(){
 		bool to_close = false;
 		for(STATION station : stations){
 			to_close = distance2d(station.pos, {x,y})<
-				min_distance_stations;
+				min_seperation_stations;
 			if(to_close)
 				break;
 
