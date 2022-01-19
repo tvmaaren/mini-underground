@@ -1,6 +1,11 @@
+#ifdef __ANDROID__
+#include <SDL2_gfxPrimitives.h>
+#include <SDL.h>
+#else
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <SDL2/SDL.h>
 #include <iostream>
+#endif
 #include <stdlib.h>
 
 
@@ -8,7 +13,7 @@
 #include "transform.hpp"
 
 
-void transform::drawline(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, int thickness,
+void Transform::drawline(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, int thickness,
 		int r, int g, int b, int a){
 
 	transform_coordinates(&x1, &y1);
@@ -17,7 +22,7 @@ void transform::drawline(SDL_Renderer* renderer, float x1, float y1, float x2, f
 	thickLineRGBA(renderer, x1, y1, x2, y2, thickness,r, g, b, a);
 }
 
-void transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, 
+void Transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, 
 		int r, int g, int b, int a){
 	
 	
@@ -37,7 +42,7 @@ void transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float 
 
 }
 
-void transform::drawngon(SDL_Renderer* renderer, int n, float start_angle, float x, float y, float radius,
+void Transform::drawngon(SDL_Renderer* renderer, int n, float start_angle, float x, float y, float radius,
 		int r, int g, int b, int a){
 	float fvertices_x[n];
 	float fvertices_y[n];
@@ -55,33 +60,34 @@ void transform::drawngon(SDL_Renderer* renderer, int n, float start_angle, float
 	filledPolygonRGBA(renderer, vertices_x, vertices_y, n,r, g, b, a);
 }
 
-void transform::drawtriangle(SDL_Renderer* renderer, float x, float y, float radius,
+void Transform::drawtriangle(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
 	drawngon(renderer, 3,-M_PI/2, x, y, radius, r, g, b, a);
 }
-void transform::drawpentagon(SDL_Renderer* renderer, float x, float y, float radius,
+void Transform::drawpentagon(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
 	drawngon(renderer, 5,-M_PI/2, x, y, radius, r, g, b, a);
 }
 
-void transform::drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
+void Transform::drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
 	//drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
 	drawngon(renderer, 4,M_PI/4, x, y, radius, r, g, b, a);
 }
-void transform::drawgem(SDL_Renderer* renderer, float x, float y, float radius,
+void Transform::drawgem(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
 	//drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
 	drawngon(renderer, 4,0, x, y, radius, r, g, b, a);
 }
 	
-void transform::drawcircle(SDL_Renderer* renderer, float x, float y, float radius,
+void Transform::drawcircle(SDL_Renderer* renderer, float x, float y, float radius,
 		int r, int g, int b, int a){
-	transform_coordinates(&x, &y);
-	filledCircleRGBA(renderer, x, y, radius, r, g, b, a);
+	drawngon(renderer, 100,0, x, y, radius, r, g, b, a);
+	//transform_coordinates(&x, &y);
+	//filledCircleRGBA(renderer*scale, x, y, radius, r, g, b, a);
 }
 
-void transform::drawshape(SDL_Renderer* renderer, SHAPE shape, float x, float y, float radius,
+void Transform::drawshape(SDL_Renderer* renderer, SHAPE shape, float x, float y, float radius,
 		int r, int g, int b, int a){
 	switch(shape){
 		case(SQUARE):
@@ -116,11 +122,11 @@ Matrix matrix_mul(Matrix A,Matrix B){
 	}
 	return out;
 }
-void transform::init(){
+void Transform::init(){
 	m  = identity;
 }
 
-void transform::rotate(float angle){
+void Transform::rotate(float angle){
 	Matrix rotation_matrix ={{
 	{ cos(angle), 	-sin(angle), 	0},
 	{ sin(angle), 	cos(angle), 	0},
@@ -129,7 +135,8 @@ void transform::rotate(float angle){
 	m = matrix_mul(rotation_matrix, m);
 }
 
-void transform::translate(int x,int y){
+
+void Transform::translate(int x,int y){
 
 	
 	Matrix translation_matrix = identity;
@@ -138,8 +145,15 @@ void transform::translate(int x,int y){
 
 	m = matrix_mul(translation_matrix, m);
 }
+void Transform::scale(float scale){
+	Matrix scale_matrix = nul;
+	for(int i=0; i<3; i++){
+		scale_matrix.m[i][i] = scale;
+	}
+	m = matrix_mul(scale_matrix, m);
 
-void transform::transform_coordinates(float*x, float*y){
+}
+void Transform::transform_coordinates(float*x, float*y){
 	float in_pos_vector[] = {*x, *y, 1};
 	float out_pos_vector[3];
 	for(int i = 0; i<3; i++){

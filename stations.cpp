@@ -1,8 +1,13 @@
+#ifdef __ANDROID__
+#include <SDL.h>
+#include <SDL2_gfxPrimitives.h>
+#else
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
+#include <iostream>
+#endif
 
 #include <stdlib.h>
-#include <iostream>
 #include <vector>
 
 using namespace std;
@@ -17,7 +22,7 @@ using namespace std;
 
 
 
-void STATION::draw(SDL_Renderer* renderer,transform& trans, COLOUR colour){
+void STATION::draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour){
 	trans.drawshape(renderer, shape, pos.x, pos.y, 8, colour.r, colour.g, colour.b, 255);
 	
 	int passenger_i = 1;
@@ -132,7 +137,7 @@ bool STATION_LIST::check_hovering(float mouse_x, float mouse_y){
 	return false;
 }
 
-void STATION_LIST::draw(SDL_Renderer* renderer, transform& trans){
+void STATION_LIST::draw(SDL_Renderer* renderer, Transform& trans){
 if(stations.size()>=1){
 
 	//draw staions

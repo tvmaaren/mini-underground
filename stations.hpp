@@ -5,7 +5,7 @@ class STATION{
 	Point2d pos;
 	int id;
 	int randomval;
-	void draw(SDL_Renderer* renderer,transform& trans, COLOUR colour);
+	void draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour);
 	SHAPE create(float x, float y, int id);
 	void add_passenger(bool* allowed_shapes);
 	SHAPE shape;
@@ -28,7 +28,7 @@ class STATION_LIST{
 		int add(float x, float y);
 		int random_add();
 		bool check_hovering(float mouse_x, float mouse_y);
-		void draw(SDL_Renderer* renderer, transform& trans);
+		void draw(SDL_Renderer* renderer, Transform& trans);
 		void init();
 
 };

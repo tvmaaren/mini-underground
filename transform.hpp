@@ -5,9 +5,10 @@ typedef struct{
 }Matrix;
 
 const Matrix identity = {{{1,0,0},{0,1,0},{0,0,1}}};
+const Matrix nul = {{{0,0,0},{0,0,0},{0,0,0}}};
 
 Matrix matrix_mul(Matrix A, Matrix B);
-class transform{
+class Transform{
 	public:
 	Matrix m;
 	void drawline(SDL_Renderer* renderer, float x1, float y1, float x2,
@@ -31,6 +32,7 @@ class transform{
 	void init();
 	void translate(int x,int y);
 	void rotate(float angle);
+	void scale(float scale);
 
 	private:
 	void transform_coordinates(float *x, float *y);

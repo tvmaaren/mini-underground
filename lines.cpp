@@ -1,7 +1,14 @@
+#ifdef __ANDROID__
+#include <SDL.h>
+#include <SDL2_gfxPrimitives.h>
+#else
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
-#include <stdlib.h>
 #include <iostream>
+#endif
+
+
+#include <stdlib.h>
 #include <vector>
 #include <math.h>
 #include <climits>
@@ -15,6 +22,8 @@ using namespace std;
 #include "lines.hpp"
 #include "stations.hpp"
 #include "passengers.hpp"
+
+#define trackwidth 8*Scale
 
 extern STATION_LIST stations;
 
@@ -54,25 +63,25 @@ bool BUFFER::handle_mouse(float mouse_x, float mouse_y){
 	      );
 	return(hovering);
 }
-void BUFFER::draw(SDL_Renderer* renderer,transform& trans, COLOUR colour, float mouse_x, float mouse_y){
+void BUFFER::draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour, float mouse_x, float mouse_y){
 	if(!created)
 		return;
 	if(handle_mouse(mouse_x, mouse_y)){
 		trans.drawline(renderer, bottom_x, bottom_y, middle_x,
-				middle_y, 8,0,0,0,255);
+				middle_y, trackwidth,0,0,0,255);
 		trans.drawline(renderer, left_x, left_y, right_x,
-				right_y, 8,0,0,0,255);
+				right_y, trackwidth,0,0,0,255);
 	}else{
 		trans.drawline(renderer, bottom_x, bottom_y, middle_x,
-				middle_y, 8,colour.r, colour.g, colour.b, 255);
+				middle_y, trackwidth,colour.r, colour.g, colour.b, 255);
 		trans.drawline(renderer, left_x, left_y, right_x,
-				right_y, 8,colour.r, colour.g, colour.b, 255);
+				right_y, trackwidth,colour.r, colour.g, colour.b, 255);
 	}
 
 }
 
-void TRAIN::draw(SDL_Renderer* renderer,transform& trans){
-	transform train_trans;
+void TRAIN::draw(SDL_Renderer* renderer,Transform& trans){
+	Transform train_trans;
         train_trans.m = identity;
 	train_trans.rotate(atan(slope)+M_PI/2);
 	train_trans.translate(x, y);
@@ -197,6 +206,11 @@ void LINE::create(COLOUR new_colour){
 }
 //make sure the station is already put in the right list when you add it
 void LINE::click_add(int station_id){
+	//don't allow two of the same stations next to each other
+	if(selected && selected->value == station_id)
+		return;
+
+
 	if(select_direction==NEXT)
 		selected = add_node_before(selected);
 	else
@@ -278,7 +292,7 @@ bool LINE::handle_mouse(float mouse_x, float mouse_y){
 
 	return(return_val);
 }
-void LINE::draw(SDL_Renderer* renderer,transform& trans,
+void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 		float mouse_x, float mouse_y){
 	bool first = true;
 	int prev = 0;
@@ -297,7 +311,7 @@ void LINE::draw(SDL_Renderer* renderer,transform& trans,
 			if(selected== head){
 				trans.drawline(renderer, stations.stations[head->value].pos.x, 
 						stations.stations[head->value].pos.y, mouse_x, 
-						mouse_y, 8,colour.r, colour.g, colour.b, 255);
+						mouse_y, trackwidth,colour.r, colour.g, colour.b, 255);
 				trans.drawcircle(renderer, mouse_x, mouse_y, 8, 255, 0, 0, 255);
 			}
 				
@@ -313,23 +327,23 @@ void LINE::draw(SDL_Renderer* renderer,transform& trans,
 		if(selected == head && select_direction == PREV){
 			trans.drawline(renderer, stations.stations[head->value].pos.x, 
 					stations.stations[head->value].pos.y, mouse_x, 
-					mouse_y, 8,colour.r, colour.g, colour.b, 255);
-			trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 255);
+					mouse_y, trackwidth,colour.r, colour.g, colour.b, 255);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour.r, colour.g, colour.b, 255);
 			trans.drawcircle(renderer, mouse_x, mouse_y, 8, 255, 0, 0, 255);
 		}
 
 		else if(selected == head){
-			trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 127);
-			trans.drawline(renderer, x0, y0, mouse_x, mouse_y, 8,colour.r, colour.g, colour.b, 255);
-			trans.drawline(renderer, mouse_x, mouse_y, x1, y1, 8,colour.r, colour.g, colour.b, 255);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour.r, colour.g, colour.b, 127);
+			trans.drawline(renderer, x0, y0, mouse_x, mouse_y, trackwidth,colour.r, colour.g, colour.b, 255);
+			trans.drawline(renderer, mouse_x, mouse_y, x1, y1, trackwidth,colour.r, colour.g, colour.b, 255);
 			trans.drawcircle(renderer, mouse_x, mouse_y, 8, 255, 0, 0, 255);
 		}
 
 		else if(hovering== head){
-			trans.drawline(renderer, x0, y0, x1, y1, 8,0, 0, 0, 255);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,0, 0, 0, 255);
 		}
 		else
-			trans.drawline(renderer, x0, y0, x1, y1, 8,colour.r, colour.g, colour.b, 255);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour.r, colour.g, colour.b, 255);
 		prev = head->value;
 		}
 		head = head->links[NEXT];

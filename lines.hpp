@@ -23,7 +23,7 @@ class BUFFER{
 	bool created = false;
 	void create(Point2d station1, Point2d station2);
 	bool handle_mouse(float mouse_x, float mouse_y);
-	void draw(SDL_Renderer* renderer,transform& trans, COLOUR colour, float mouse_x, float mouse_y);
+	void draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour, float mouse_x, float mouse_y);
 };
 
 class TRAIN{
@@ -55,7 +55,7 @@ class TRAIN{
 	float slope;
 
 	float x,y;
-	void draw(SDL_Renderer* renderer,transform& trans);
+	void draw(SDL_Renderer* renderer,Transform& trans);
 
 	void init(node_t* start_station, LINK_DIRECTION in_direction, COLOUR colour_new);
 	void move(float seconds);
@@ -83,6 +83,6 @@ class LINE{
 	void click_select();
 	void unselect();
 	bool handle_mouse(float mouse_x, float mouse_y);
-	void draw(SDL_Renderer* renderer,transform& trans,
+	void draw(SDL_Renderer* renderer,Transform& trans,
 			float mouse_x, float mouse_y);
 };
