@@ -23,8 +23,9 @@ using namespace std;
 #include "stations.hpp"
 #include "passengers.hpp"
 
-#define trackwidth 8*Scale
+#define trackwidth 8*trans.Scale
 
+extern STATION_LIST stations;
 extern STATION_LIST stations;
 
 
@@ -98,9 +99,10 @@ void TRAIN::draw(SDL_Renderer* renderer,Transform& trans){
 
 }
 
-void TRAIN::init(node_t* start_station, LINK_DIRECTION in_direction, COLOUR colour_new){
+void TRAIN::init(node_t* start_station, node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new){
 	initialised = true;
 	start_line = start_station;
+	removed_segments = new_removed_segments;
 	station_id = start_line->value;
 	direction = in_direction;
 	colour = colour_new;
@@ -193,8 +195,21 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 	//to the current station
 	
 	int dist_current_station = min_distance_stations(shape, station_id, NULL);
-	int next_station = start_line->
-		links[direction]->value;
+	int next_station;
+	if(start_line->links[direction]){
+		next_station = start_line->links[direction]->value;
+	}else{
+		cout << "else\n";
+		//search next station in removed lines list
+		for(node_t* head = *removed_segments; head; head=head->links[NEXT]->links[NEXT]){
+			if(head->value==station_id){
+				next_station = head->links[NEXT]->value;
+			}else if(head->links[NEXT]->value==station_id){
+				next_station = head->value;
+			}
+		}
+	}
+
 
 	int dist_next_station = min_distance_stations(shape, next_station, NULL);
 
@@ -204,22 +219,113 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 void LINE::create(COLOUR new_colour){
 	colour = new_colour;
 }
+
+
+
 //make sure the station is already put in the right list when you add it
 void LINE::click_add(int station_id){
-	//don't allow two of the same stations next to each other
-	if(selected && selected->value == station_id)
-		return;
+	//If you try add the station you are selecting remove te selected
+	//station from the line
+	for(int  action : actions){
+		if(station_id==action)return;
+	}
+	actions.push_back(station_id);
+
+	//remove a station
+	if(selected && selected->value == station_id){
+		//add segments to removed_segments
+		removed_segments=add_node_before(removed_segments);
+		removed_segments->value = selected->value; 
+		if(selected->links[NEXT]){
+			removed_segments=add_node_before(removed_segments);
+			removed_segments->value=selected->links[NEXT]->value;
+		}
+		if(selected->links[PREV]){
+			removed_segments=add_node_before(removed_segments);
+			removed_segments->value=selected->links[PREV]->value;
+		}
 
 
-	if(select_direction==NEXT)
-		selected = add_node_before(selected);
-	else
-		selected = add_node_after(selected);
 
-	selected->value = station_id;
-	stations.stations[station_id].nodes.push_back(selected);
+		//removes nodes from the list assuming
+		//it only occures once
+		for(unsigned int i =0;  i<stations.stations[station_id].nodes.size();i++){
+			if(stations.stations[station_id].nodes[i] == selected){
+				stations.stations[station_id].nodes.erase(stations.stations[station_id].nodes.begin()+i);
+				break;
+			}
+		}
 
-	length +=1;
+		node_t* new_selected = remove_node(selected);
+		if(selected==first_station){
+			first_station = new_selected;
+		}
+		//go through all trains to check if start_line
+		//is equal to the now removed node
+		/*for(int i =0; i<lines.size(); i++){
+			if(lines[i].train->start_line==selected){
+				lines[i].train->start_line = NULL;
+			}
+		}*/
+		if(selected==last_station){
+			last_station = new_selected;
+		}
+		selected = new_selected;
+
+		length--;
+		if(length<2)
+			remove_node(selected);//remove the entire line
+	//add a station	
+	}else{
+		cout << "add a station" << endl;
+		if(selected){
+
+			//maybe remove from removed_segments
+			int start_id = selected->value;
+			int end_id = station_id;
+
+			node_t* following;
+
+			for(node_t* head = removed_segments; head; head = following){
+				if((head->value==start_id && head->links[NEXT]->value==end_id)||
+					(head->links[NEXT]->value==start_id && head->value==end_id)){
+
+					if(head == removed_segments)
+						removed_segments = head->links[NEXT]->links[NEXT];
+				
+					cout << "remove"<<endl;	
+					node_t* next = head->links[NEXT];
+					following = next->links[NEXT];
+					remove_node(head);
+					remove_node(next);
+				}else{
+					following = head->links[NEXT]->links[NEXT];
+				}
+			}
+		}
+		cout << "After remove from removed_segments" << endl;
+
+
+		if(select_direction==NEXT)
+			selected = add_node_before(selected);
+		else
+			selected = add_node_after(selected);
+		cout << "add a node" << endl;
+
+		if(selected->links[NEXT] && selected->links[PREV]){
+			removed_segments = add_node_before(removed_segments);//.push_back(selected->links[NEXT]->value);
+			removed_segments->value=selected->links[NEXT]->value; 
+			removed_segments = add_node_before(removed_segments);
+			removed_segments->value=selected->links[NEXT]->value; 
+		}
+		cout << "After add to removed_segments" << endl;
+
+		selected->value = station_id;
+		stations.stations[station_id].nodes.push_back(selected);
+
+
+		length ++;
+	}
 	if(!selected->links[PREV]){
 		first_station = selected;
 	}
@@ -227,7 +333,7 @@ void LINE::click_add(int station_id){
 		last_station = selected;
 	}
 	if(length >=2 && !train.initialised)
-		train.init(first_station, NEXT, colour);
+		train.init(first_station,&removed_segments, NEXT, colour);
 
 	if(!first_station->links[PREV] && length>=2){
 		bufferstop1.create(stations.stations[first_station->value].pos, stations.stations[first_station->links[NEXT]->value].pos);
@@ -254,6 +360,7 @@ void LINE::click_select(){
 }
 void LINE::unselect(){
 	selected = NULL;
+	actions.clear();
 }
 bool LINE::handle_mouse(float mouse_x, float mouse_y){
 
@@ -352,4 +459,14 @@ void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 		train.move(1/(double)framerate);
 		train.draw(renderer, trans);
 	}
+
+	//draw the removed sections
+	for(node_t* head = removed_segments; head; head = head->links[NEXT]->links[NEXT]){
+		trans.drawline(renderer, stations.stations[removed_segments->value].pos.x,
+					 stations.stations[removed_segments->value].pos.y,
+					 stations.stations[removed_segments->links[NEXT]->value].pos.x,
+					 stations.stations[removed_segments->links[NEXT]->value].pos.y,
+					 trackwidth,colour.r, colour.g, colour.b, 127);
+	}
+
 }

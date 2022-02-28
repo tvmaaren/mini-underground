@@ -34,6 +34,29 @@ float distance_line_to_point(Point2d point, Point2d line1, Point2d line2){
 	return(distance);
 
 }
+
+//Remove node from linked list. Returns the node before. If that doesn't exist it
+//returns the node after
+node_t* remove_node(node_t* node){
+	if(!node){
+		return NULL;
+	}
+
+	node_t* ret = NULL;
+	if(node->links[NEXT]){
+		ret = node->links[NEXT];
+		node->links[NEXT]->links[PREV] = node->links[PREV];
+	}
+	if(node->links[PREV]){
+		ret = node->links[PREV];
+		node->links[PREV]->links[NEXT] = node->links[NEXT];
+	}
+	free(node);
+	return(ret);
+	
+
+}
+
 node_t* add_node_before(node_t* node){
 	node_t *new_node_p  = (node_t*)malloc(sizeof(node_t));
 	new_node_p->links[NEXT] = node;

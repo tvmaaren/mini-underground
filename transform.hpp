@@ -11,6 +11,7 @@ Matrix matrix_mul(Matrix A, Matrix B);
 class Transform{
 	public:
 	Matrix m;
+	float Scale;
 	void drawline(SDL_Renderer* renderer, float x1, float y1, float x2,
 			float y2, int thickness, int r, int g, int b, int a);
 	void drawcircle(SDL_Renderer* renderer, float x, float y, float radius,
@@ -32,7 +33,7 @@ class Transform{
 	void init();
 	void translate(int x,int y);
 	void rotate(float angle);
-	void scale(float scale);
+	void scale(float scale_new);
 
 	private:
 	void transform_coordinates(float *x, float *y);

@@ -1,7 +1,0 @@
-
-
-Add station at the end			Select station at the end and press on the other station
-Add station at the beginning		Select station at the beginning and press on the other station
-Add station between two			Select linepiece and station you want to add
-Remove station				Select station and press delete
-

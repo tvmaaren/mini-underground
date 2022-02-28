@@ -41,6 +41,7 @@ class TRAIN{
 	int station_id;
 	float waiting_time_seconds = STATION_WAIT_TIME;
 
+	node_t** removed_segments;
 	node_t* start_line;
 	float velocity = 1;
 
@@ -57,7 +58,7 @@ class TRAIN{
 	float x,y;
 	void draw(SDL_Renderer* renderer,Transform& trans);
 
-	void init(node_t* start_station, LINK_DIRECTION in_direction, COLOUR colour_new);
+	void init(node_t* start_station,node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new);
 	void move(float seconds);
 	bool should_enter(SHAPE shape, int station_id);
 	bool should_leave(SHAPE shape, int station_id);
@@ -85,4 +86,14 @@ class LINE{
 	bool handle_mouse(float mouse_x, float mouse_y);
 	void draw(SDL_Renderer* renderer,Transform& trans,
 			float mouse_x, float mouse_y);
+
+	//When selection starts it keeps track of stations that
+	//get added or removed
+	vector <int> actions;
+
+	//keeps track of all tracks that the player wants to
+	//remove, but cannot be removed, because a train
+	//still has to go over it
+	//TODO: Make it a dynamic
+	node_t* removed_segments=NULL;
 };

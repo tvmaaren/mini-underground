@@ -145,10 +145,11 @@ void Transform::translate(int x,int y){
 
 	m = matrix_mul(translation_matrix, m);
 }
-void Transform::scale(float scale){
+void Transform::scale(float scale_new){
 	Matrix scale_matrix = nul;
+	Scale = scale_new;
 	for(int i=0; i<3; i++){
-		scale_matrix.m[i][i] = scale;
+		scale_matrix.m[i][i] = scale_new;
 	}
 	m = matrix_mul(scale_matrix, m);
 

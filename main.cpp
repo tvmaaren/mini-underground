@@ -22,8 +22,8 @@ using namespace std;
 #include "settings.hpp"
 
 
-#define inverse_trans_x(x) (x/Scale-camera_x)
-#define inverse_trans_y(y) (y/Scale-camera_y)
+#define inverse_trans_x(x) (x/scale-camera_x)
+#define inverse_trans_y(y) (y/scale-camera_y)
 
 
 const COLOUR line_colours[]={
@@ -34,6 +34,12 @@ const COLOUR line_colours[]={
 {0,0,255},
 {0,0,0},
 {0,255,255}};
+
+float calc_scale(int width, int height){
+		int min_width_heigt = width>height ? height : width;
+		float scale = (float)min_width_heigt/(float)480;
+		return scale;
+}
 
 class MOUSE{
 	public:
@@ -113,8 +119,16 @@ int main(int argc, char* argv[]){
 		SDL_Window* window = NULL;
 		SDL_Renderer* renderer = NULL;
 
-		if (SDL_CreateWindowAndRenderer(640, 480, 0, &window, &renderer) == 0) {
+		int screen_width = 640;
+		int screen_height = 480;
+
+		if (SDL_CreateWindowAndRenderer(screen_width, screen_height, 0, &window, &renderer) == 0) {
+			//maybe the screen hasn't have the same size as asked
+			SDL_SetWindowResizable(window, SDL_TRUE);
+			SDL_GL_GetDrawableSize(window, &screen_width,&screen_height);
+
 			SDL_bool done = SDL_FALSE;
+
 
 			stations.init();
 
@@ -126,8 +140,11 @@ int main(int argc, char* argv[]){
 			Uint32 start_tick;
 			SDL_Event event;
 
-			float camera_x= screen_width/2;
-			float camera_y= screen_height/2;
+			float scale = calc_scale(screen_width, screen_height);
+
+
+			float camera_x= screen_width/2/scale;
+			float camera_y= screen_height/2/scale;
 			float start_camera_x;
 			float start_camera_y;
 
@@ -147,11 +164,17 @@ int main(int argc, char* argv[]){
 			int frame = 0;
 
 			while (!done) {
+				SDL_GetWindowSize(window, &screen_width,&screen_height);
+				//rescale based on size window
+				/*int min_width_heigt = screen_width>screen_height ? screen_height : screen_width;*/
+				scale = calc_scale(screen_width, screen_height);
+
 				hovering.type = NO_OBJECT;
 
 				Transform trans;
 				trans.init();
-				trans.scale(Scale);
+				//stations.add(-camera_x/scale,-camera_y/scale);
+				trans.scale(scale);
 				trans.translate(camera_x,camera_y);
 
 				const Uint8 *state = SDL_GetKeyboardState(NULL);
@@ -234,8 +257,8 @@ int main(int argc, char* argv[]){
 					start_camera_y= camera_y;
 				}
 				if(mouse.pressed&&selected.line_i==INT_MAX){
-					camera_x = start_camera_x - (mouse.start_x-mouse.x)/Scale;
-					camera_y = start_camera_y - (mouse.start_y-mouse.y)/Scale;
+					camera_x = start_camera_x - (mouse.start_x-mouse.x)/scale;
+					camera_y = start_camera_y - (mouse.start_y-mouse.y)/scale;
 				}
 				if(mouse.click && selected.line_i!=INT_MAX && !hovering.type){
 
@@ -252,6 +275,14 @@ int main(int argc, char* argv[]){
 				if( ( 1000/framerate) > SDL_GetTicks() - start_tick ){
 					SDL_Delay( 1000/ framerate - ( SDL_GetTicks() - start_tick) );
 				}
+
+
+
+				//for one reason or another the program
+				//crashes at some points when these two lines
+				//aren't added in. This is why I added them
+				SDL_RendererInfo info;
+				SDL_GetRendererInfo(renderer, &info);
 				SDL_RenderPresent(renderer);
 				frame++;
 
