@@ -119,14 +119,31 @@ void TRAIN::move(float seconds){
 		if(waiting_time_seconds<0){
 			location_type = ON_LINE;
 			if(!start_line->links[direction])
-					direction = direction ? PREV : NEXT;
-				start_line = start_line->links[direction];
-			break;
+				direction = direction ? PREV : NEXT;
+			if(!start_line->links[direction]){
+				for(node_t* head = *removed_segments; head;
+						head=head->links[NEXT]->links[NEXT]){
+					if(head->value==station_id){
+						next_station = head->links[NEXT]->value;
+					}else if(head->links[NEXT]->value==station_id){
+						next_station = head->value;
+					}
+				}
+
+			}else{
+				next_station = start_line->links[direction]->value;
+			}
+			start_line = start_line->links[direction];
 		}
-		x0 = stations.stations[start_line->value].pos.x;
-		y0 = stations.stations[start_line->value].pos.y;
-		x1 = stations.stations[start_line->links[direction]->value].pos.x;
-		y1 = stations.stations[start_line->links[direction]->value].pos.y;
+		x0 = x;
+		y0 = y;
+
+		/*x0 = stations.stations[start_line->value].pos.x;
+		y0 = stations.stations[start_line->value].pos.y;*/
+		/*x0 = stations.stations[start_line->value].pos.x;
+		y0 = stations.stations[start_line->value].pos.y;*/
+		x1 = stations.stations[next_station].pos.x;
+		y1 = stations.stations[next_station].pos.y;
 		slope = (y1-y0)/(x1-x0);
 		break;
 			
@@ -141,10 +158,10 @@ void TRAIN::move(float seconds){
 		//check if the train is beyond the station
 		if( (x-x0)/(x1-x0) >1 ||
 		    (y-y0)/(y1-y0) >1){
-			station_id = start_line->value;
+			station_id = next_station;
 			location_type = AT_STATION;
 			waiting_time_seconds = STATION_WAIT_TIME;
-			if(!start_line->links[direction])
+			if(start_line && !start_line->links[direction])
 					direction = direction ? PREV : NEXT;
 			//remove passengers from train
 			SHAPE shape = stations.stations[station_id].shape;
@@ -189,7 +206,7 @@ bool TRAIN::should_leave(SHAPE shape, int station_id){
 }
 
 //Returns true if the passengers of shape %shape% at station %station_id% should
-//enter train %train%
+//enter train
 bool TRAIN::should_enter(SHAPE shape, int station_id){
 	//compare the minimum distance of the next station
 	//to the current station
@@ -197,6 +214,7 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 	int dist_current_station = min_distance_stations(shape, station_id, NULL);
 	int next_station;
 	if(start_line->links[direction]){
+		cout << "if\n";
 		next_station = start_line->links[direction]->value;
 	}else{
 		cout << "else\n";
@@ -262,11 +280,9 @@ void LINE::click_add(int station_id){
 		}
 		//go through all trains to check if start_line
 		//is equal to the now removed node
-		/*for(int i =0; i<lines.size(); i++){
-			if(lines[i].train->start_line==selected){
-				lines[i].train->start_line = NULL;
-			}
-		}*/
+		if(train.start_line==selected){
+			train.start_line = NULL;
+		}
 		if(selected==last_station){
 			last_station = new_selected;
 		}
@@ -277,7 +293,6 @@ void LINE::click_add(int station_id){
 			remove_node(selected);//remove the entire line
 	//add a station	
 	}else{
-		cout << "add a station" << endl;
 		if(selected){
 
 			//maybe remove from removed_segments
@@ -293,7 +308,6 @@ void LINE::click_add(int station_id){
 					if(head == removed_segments)
 						removed_segments = head->links[NEXT]->links[NEXT];
 				
-					cout << "remove"<<endl;	
 					node_t* next = head->links[NEXT];
 					following = next->links[NEXT];
 					remove_node(head);
@@ -303,14 +317,12 @@ void LINE::click_add(int station_id){
 				}
 			}
 		}
-		cout << "After remove from removed_segments" << endl;
 
 
 		if(select_direction==NEXT)
 			selected = add_node_before(selected);
 		else
 			selected = add_node_after(selected);
-		cout << "add a node" << endl;
 
 		if(selected->links[NEXT] && selected->links[PREV]){
 			removed_segments = add_node_before(removed_segments);//.push_back(selected->links[NEXT]->value);
@@ -318,7 +330,6 @@ void LINE::click_add(int station_id){
 			removed_segments = add_node_before(removed_segments);
 			removed_segments->value=selected->links[NEXT]->value; 
 		}
-		cout << "After add to removed_segments" << endl;
 
 		selected->value = station_id;
 		stations.stations[station_id].nodes.push_back(selected);

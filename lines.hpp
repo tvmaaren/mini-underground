@@ -38,6 +38,7 @@ class TRAIN{
 	int am_passengers_per_type[shapes];
 	int max_passengers=4;
 	
+	int next_station=0;
 	int station_id;
 	float waiting_time_seconds = STATION_WAIT_TIME;
 
