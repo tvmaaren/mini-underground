@@ -1,5 +1,5 @@
 
-const float STATION_WAIT_TIME = 0.1;
+const float STATION_WAIT_TIME = 0.5;
 
 
 class BUFFER{
@@ -31,7 +31,7 @@ class TRAIN{
 
 	bool initialised =false;
 
-	enum {AT_STATION, ON_LINE} location_type = AT_STATION;
+	enum {AT_STATION, ON_LINE, ON_REMOVED_LINE} location_type = AT_STATION;
 	LINK_DIRECTION direction;
 
 	int passengers;
@@ -40,9 +40,11 @@ class TRAIN{
 	
 	int next_station=0;
 	int station_id;
+	int prev_station;
 	float waiting_time_seconds = STATION_WAIT_TIME;
 
 	node_t** removed_segments;
+	int line_id;
 	node_t* start_line;
 	float velocity = 1;
 
@@ -59,18 +61,20 @@ class TRAIN{
 	float x,y;
 	void draw(SDL_Renderer* renderer,Transform& trans);
 
-	void init(node_t* start_station,node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new);
+	void init(node_t* start_station,int new_line_id, node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new);
 	void move(float seconds);
 	bool should_enter(SHAPE shape, int station_id);
 	bool should_leave(SHAPE shape, int station_id);
+	bool find_next_station();
 };
 class LINE{
-	private:
+	public:
+	int id;
 	node_t* first_station;
 	node_t* last_station;
-	public:
 	node_t* selected;
-	TRAIN train;
+	bool set_train_id=false;//true if it has assigned train_id
+	int train_id;
 	int length=0;
 	BUFFER bufferstop1;
 	BUFFER bufferstop2;
@@ -80,13 +84,14 @@ class LINE{
 	
 	void create(COLOUR new_colour);
 	//make sure the station is already put in the right list when you add it
-	void click_add(int station_id);
+	void click_add(int station_id);//true if the line should be removed
 
 	void click_select();
 	void unselect();
 	bool handle_mouse(float mouse_x, float mouse_y);
 	void draw(SDL_Renderer* renderer,Transform& trans,
 			float mouse_x, float mouse_y);
+	void check_removed();//remove as many elemements from removed_segments as possible
 
 	//When selection starts it keeps track of stations that
 	//get added or removed

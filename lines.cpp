@@ -26,7 +26,8 @@ using namespace std;
 #define trackwidth 8*trans.Scale
 
 extern STATION_LIST stations;
-extern STATION_LIST stations;
+extern vector<TRAIN> trains;
+extern vector<LINE> lines;
 
 
 void BUFFER::create(Point2d station1, Point2d station2){
@@ -99,11 +100,64 @@ void TRAIN::draw(SDL_Renderer* renderer,Transform& trans){
 
 }
 
-void TRAIN::init(node_t* start_station, node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new){
+//returns false if it has to go over
+//removed tracks
+bool TRAIN::find_next_station(){
+	if(!start_line || !start_line->links[direction]){
+		//first try to find te station on the line
+		for(node_t* head = lines[line_id].first_station; head;
+				head=head->links[NEXT]){
+			if(head->value==station_id){
+				start_line=head;
+			}
+		}
+	}
+	if(!start_line){
+		for(node_t* head = *removed_segments; head;
+				head=head->links[NEXT]->links[NEXT]){
+			if(head->value==station_id){
+				next_station = head->links[NEXT]->value;
+
+				//make sure the train doesn't go back 
+				//and forth
+				if(next_station!=prev_station)
+					break;
+			}else if(head->links[NEXT]->value==station_id){
+				next_station = head->value;
+				//make sure the train doesn't go back 
+				//and forth
+				if(next_station!=prev_station)
+					break;
+			}
+		}
+		return false;
+	}
+	if(!start_line->links[direction])
+		direction = direction ? PREV : NEXT;
+	if(!start_line->links[direction]){
+		for(node_t* head = *removed_segments; head;
+				head=head->links[NEXT]->links[NEXT]){
+			if(head->value==station_id){
+				next_station = head->links[NEXT]->value;
+			}else if(head->links[NEXT]->value==station_id){
+				next_station = head->value;
+			}
+		}
+		return false;
+	}else{
+		next_station = start_line->links[direction]->value;
+	}
+	return true;
+
+}
+
+void TRAIN::init(node_t* start_station,int new_line_id, node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new){
 	initialised = true;
 	start_line = start_station;
+	line_id = new_line_id;
 	removed_segments = new_removed_segments;
 	station_id = start_line->value;
+	prev_station = start_line->value;
 	direction = in_direction;
 	colour = colour_new;
 	for(int i=0; i<shapes; i++){
@@ -111,6 +165,8 @@ void TRAIN::init(node_t* start_station, node_t** new_removed_segments, LINK_DIRE
 	}
 }
 void TRAIN::move(float seconds){
+	float dx;
+	float dy;
 	switch(location_type){
 	case(AT_STATION):
 		x = stations.stations[station_id].pos.x;
@@ -118,52 +174,36 @@ void TRAIN::move(float seconds){
 		waiting_time_seconds-= seconds;
 		if(waiting_time_seconds<0){
 			location_type = ON_LINE;
-			if(!start_line->links[direction])
-				direction = direction ? PREV : NEXT;
-			if(!start_line->links[direction]){
-				for(node_t* head = *removed_segments; head;
-						head=head->links[NEXT]->links[NEXT]){
-					if(head->value==station_id){
-						next_station = head->links[NEXT]->value;
-					}else if(head->links[NEXT]->value==station_id){
-						next_station = head->value;
-					}
-				}
+			if(find_next_station())
+				start_line = start_line->links[direction];
+			x0 = x;
+			y0 = y;
 
-			}else{
-				next_station = start_line->links[direction]->value;
-			}
-			start_line = start_line->links[direction];
+			x1 = stations.stations[next_station].pos.x;
+			y1 = stations.stations[next_station].pos.y;
+			slope = (y1-y0)/(x1-x0);
 		}
-		x0 = x;
-		y0 = y;
-
-		/*x0 = stations.stations[start_line->value].pos.x;
-		y0 = stations.stations[start_line->value].pos.y;*/
-		/*x0 = stations.stations[start_line->value].pos.x;
-		y0 = stations.stations[start_line->value].pos.y;*/
-		x1 = stations.stations[next_station].pos.x;
-		y1 = stations.stations[next_station].pos.y;
-		slope = (y1-y0)/(x1-x0);
 		break;
 			
 	case(ON_LINE):
-		float dx = sqrt( velocity/(slope*slope+1) );
+		dx = sqrt( velocity/(slope*slope+1) );
 		if(x1-x0<0)
 			dx = -dx;
-		float dy = slope*dx;
+		dy = slope*dx;
 		x+=dx;
 		y+=dy;
+
 
 		//check if the train is beyond the station
 		if( (x-x0)/(x1-x0) >1 ||
 		    (y-y0)/(y1-y0) >1){
+			prev_station = station_id;
 			station_id = next_station;
 			location_type = AT_STATION;
 			waiting_time_seconds = STATION_WAIT_TIME;
-			if(start_line && !start_line->links[direction])
-					direction = direction ? PREV : NEXT;
-			//remove passengers from train
+			bool handle_passengers = find_next_station();
+			lines[line_id].check_removed();
+			if(handle_passengers){
 			SHAPE shape = stations.stations[station_id].shape;
 			passengers-=am_passengers_per_type[shape];
 			am_passengers_per_type[shape]=0;
@@ -184,6 +224,7 @@ void TRAIN::move(float seconds){
 			
 
 			//add passsengers
+
 			int delta;
 			for(int i=0; i<shapes; i++){
 				if(!stations.used_shape[i])
@@ -197,8 +238,27 @@ void TRAIN::move(float seconds){
 					passengers+=delta;
 				}
 			}
+			}
 		}
+		break;
+	case(ON_REMOVED_LINE):
+		float dx = sqrt( velocity/(slope*slope+1) );
+		if(x1-x0<0)
+			dx = -dx;
+		float dy = slope*dx;
+		x+=dx;
+		y+=dy;
+		//check if the train is beyond the station
+		if( (x-x0)/(x1-x0) >1 ||
+		    (y-y0)/(y1-y0) >1){
+			station_id = next_station;
+			location_type = AT_STATION;
+			waiting_time_seconds = STATION_WAIT_TIME;
+		}
+		
+		break;
 	}
+
 }
 //Returns true if the passengers of shape %shape% should leave the train
 bool TRAIN::should_leave(SHAPE shape, int station_id){
@@ -214,10 +274,8 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 	int dist_current_station = min_distance_stations(shape, station_id, NULL);
 	int next_station;
 	if(start_line->links[direction]){
-		cout << "if\n";
 		next_station = start_line->links[direction]->value;
 	}else{
-		cout << "else\n";
 		//search next station in removed lines list
 		for(node_t* head = *removed_segments; head; head=head->links[NEXT]->links[NEXT]){
 			if(head->value==station_id){
@@ -249,16 +307,33 @@ void LINE::click_add(int station_id){
 	}
 	actions.push_back(station_id);
 
+	bool remove_next_station = selected && selected->value == station_id;
+	bool remove_prev_station = selected && (selected->links[PREV] &&
+			selected->links[PREV]->value == station_id);
+
+	node_t* to_be_removed;
+	if(remove_next_station){
+		to_be_removed = selected;
+	}else if(remove_prev_station){
+		to_be_removed = selected->links[PREV];
+	}
+
 	//remove a station
-	if(selected && selected->value == station_id){
+	//if the station is next to itself
+	if((remove_next_station || remove_prev_station)){
+		if(length>2){
 		//add segments to removed_segments
-		removed_segments=add_node_before(removed_segments);
-		removed_segments->value = selected->value; 
-		if(selected->links[NEXT]){
+		if(to_be_removed->links[NEXT]){
 			removed_segments=add_node_before(removed_segments);
-			removed_segments->value=selected->links[NEXT]->value;
+			removed_segments->value = to_be_removed->value; 
+
+			removed_segments=add_node_before(removed_segments);
+			removed_segments->value=to_be_removed->links[NEXT]->value;
 		}
 		if(selected->links[PREV]){
+			removed_segments=add_node_before(removed_segments);
+			removed_segments->value = to_be_removed->value; 
+
 			removed_segments=add_node_before(removed_segments);
 			removed_segments->value=selected->links[PREV]->value;
 		}
@@ -268,29 +343,32 @@ void LINE::click_add(int station_id){
 		//removes nodes from the list assuming
 		//it only occures once
 		for(unsigned int i =0;  i<stations.stations[station_id].nodes.size();i++){
-			if(stations.stations[station_id].nodes[i] == selected){
+			if(stations.stations[station_id].nodes[i] == to_be_removed){
 				stations.stations[station_id].nodes.erase(stations.stations[station_id].nodes.begin()+i);
 				break;
 			}
 		}
 
-		node_t* new_selected = remove_node(selected);
-		if(selected==first_station){
-			first_station = new_selected;
-		}
+		bool replace_first_station=
+			first_station==to_be_removed;
+		bool replace_last_station=
+			first_station==to_be_removed;
+		node_t* adjacent = remove_node(to_be_removed);
+		selected = adjacent;
+		if(replace_first_station)
+			first_station = adjacent;
+		if(replace_last_station)
+			first_station = adjacent;
+
 		//go through all trains to check if start_line
 		//is equal to the now removed node
-		if(train.start_line==selected){
-			train.start_line = NULL;
+		if(trains[train_id].start_line==to_be_removed){
+			trains[train_id].start_line = NULL;
 		}
-		if(selected==last_station){
-			last_station = new_selected;
-		}
-		selected = new_selected;
 
 		length--;
-		if(length<2)
-			remove_node(selected);//remove the entire line
+		check_removed();
+		}
 	//add a station	
 	}else{
 		if(selected){
@@ -343,8 +421,15 @@ void LINE::click_add(int station_id){
 	if(!selected->links[NEXT]){
 		last_station = selected;
 	}
-	if(length >=2 && !train.initialised)
-		train.init(first_station,&removed_segments, NEXT, colour);
+
+	if(!set_train_id){
+		train_id = trains.size();
+		trains.resize(trains.size()+1);
+		set_train_id=true;
+	}
+	if(length >=2 && !trains[train_id].initialised){
+		trains[train_id].init(first_station,id,&removed_segments, NEXT, colour);
+	}
 
 	if(!first_station->links[PREV] && length>=2){
 		bufferstop1.create(stations.stations[first_station->value].pos, stations.stations[first_station->links[NEXT]->value].pos);
@@ -352,6 +437,7 @@ void LINE::click_add(int station_id){
 	if(!last_station->links[NEXT] && length>=2){
 		bufferstop2.create(stations.stations[last_station->value].pos, stations.stations[last_station->links[PREV]->value].pos);
 	}
+	return;
 }
 
 void LINE::click_select(){
@@ -466,18 +552,47 @@ void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 		}
 		head = head->links[NEXT];
 	}
-	if(train.initialised && length >= 2){
-		train.move(1/(double)framerate);
-		train.draw(renderer, trans);
+	if(trains[train_id].initialised && length >= 2){
+		trains[train_id].move(1/(double)framerate);
+		trains[train_id].draw(renderer, trans);
 	}
 
 	//draw the removed sections
 	for(node_t* head = removed_segments; head; head = head->links[NEXT]->links[NEXT]){
-		trans.drawline(renderer, stations.stations[removed_segments->value].pos.x,
-					 stations.stations[removed_segments->value].pos.y,
-					 stations.stations[removed_segments->links[NEXT]->value].pos.x,
-					 stations.stations[removed_segments->links[NEXT]->value].pos.y,
+		trans.drawline(renderer, stations.stations[head->value].pos.x,
+					 stations.stations[head->value].pos.y,
+					 stations.stations[head->links[NEXT]->value].pos.x,
+					 stations.stations[head->links[NEXT]->value].pos.y,
 					 trackwidth,colour.r, colour.g, colour.b, 127);
 	}
 
+}
+
+void LINE::check_removed(){
+	node_t* following;
+	for(node_t* head = removed_segments; head; head = following){
+		//it will only remove segment from removed_segments if
+		//there are no trains on the the segment and start_line is not set to null
+
+		following = head->links[NEXT]->links[NEXT];
+		node_t* next = head->links[NEXT];
+		int station_1 = head->value;
+		int station_2 = head->links[NEXT]->value;
+
+		if(trains[train_id].start_line && !(
+			((station_1 == trains[train_id].station_id) 	&&
+			 (station_2 == trains[train_id].next_station)) 	||
+			((station_2 == trains[train_id].station_id) 	&&
+			 (station_1 == trains[train_id].next_station)))
+		  ){
+			
+			
+			if(head == removed_segments)
+				removed_segments = head->links[NEXT]->links[NEXT];
+
+			remove_node(head);
+			remove_node(next);
+		}
+			
+	}
 }

@@ -113,6 +113,7 @@ typedef struct{
 
 
 vector<LINE> lines;
+vector<TRAIN> trains;
 
 int main(int argc, char* argv[]){
 	if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
@@ -148,6 +149,7 @@ int main(int argc, char* argv[]){
 			float start_camera_x;
 			float start_camera_y;
 
+			stations.random_add();
 			stations.random_add();
 			stations.random_add();
 			stations.random_add();
@@ -240,6 +242,7 @@ int main(int argc, char* argv[]){
 				if(hovering.type == STATION_OBJECT){
 					if(mouse.click && selected.line_i == INT_MAX){
 						lines.resize(lines.size()+1);
+						lines[lines.size()-1].id=lines.size()-1;
 						selected.line_i = lines.size()-1;
 						lines[lines.size()-1].create(line_colours[selected.line_i]);
 						lines[selected.line_i].click_add(stations.hovering_id);
@@ -263,8 +266,7 @@ int main(int argc, char* argv[]){
 				if(mouse.click && selected.line_i!=INT_MAX && !hovering.type){
 
 					lines[selected.line_i].click_add(
-							stations.add(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))
-					);
+							stations.add(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y)));
 
 				}
 

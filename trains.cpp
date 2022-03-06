@@ -117,7 +117,6 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 	if(start_line->links[direction]){
 		next_station = start_line->links[direction]->value;
 	}else{
-		cout << "else\n";
 		//search next station in removed lines list
 		for(node_t* head = *removed_segments; head; head=head->links[NEXT]->links[NEXT]){
 			if(head->value==station_id){
