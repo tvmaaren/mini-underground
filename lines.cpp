@@ -335,7 +335,7 @@ void LINE::click_add(int station_id){
 			removed_segments->value = to_be_removed->value; 
 
 			removed_segments=add_node_before(removed_segments);
-			removed_segments->value=selected->links[PREV]->value;
+			removed_segments->value=to_be_removed->links[PREV]->value;
 		}
 
 
