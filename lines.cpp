@@ -25,6 +25,8 @@ using namespace std;
 
 #define trackwidth 8*trans.Scale
 
+extern int points;
+
 extern STATION_LIST stations;
 extern vector<TRAIN> trains;
 extern vector<LINE> lines;
@@ -206,6 +208,7 @@ void TRAIN::move(float seconds){
 			if(handle_passengers){
 			SHAPE shape = stations.stations[station_id].shape;
 			passengers-=am_passengers_per_type[shape];
+			points += am_passengers_per_type[shape];;
 			am_passengers_per_type[shape]=0;
 
 			//remove passsengers from train

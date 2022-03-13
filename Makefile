@@ -1,6 +1,6 @@
 default: main 
 
-libs=-lSDL2 -lSDL2main -lSDL2_gfx -lm
+libs=-lSDL2 -lSDL2main -lSDL2_gfx -lm -lSDL2_ttf
 CPPFLAGS=$(libs) -g -Wall
 
 main: main.cpp transform.o misc.o lines.o types.hpp stations.o settings.hpp passengers.o

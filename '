@@ -36,7 +36,6 @@ const COLOUR line_colours[]={
 {0,0,0},
 {0,255,255}};
 
-
 float calc_scale(int width, int height){
 		int min_width_heigt = width>height ? height : width;
 		float scale = (float)min_width_heigt/(float)480;
@@ -112,7 +111,6 @@ typedef struct{
 	BUFFER bufferstop2;
 }LINE_T;
 
-int points=0;//the amount of passengers that have arrived at stations
 
 
 vector<LINE> lines;
@@ -139,7 +137,14 @@ int main(int argc, char* argv[]){
 				   cout << "TTF_Init:" << TTF_GetError() << endl;
 				   exit(2);
 			}
-			TTF_Font* font = TTF_OpenFont("DejaVuSansCondensed-Bold.ttf",20);
+			TTF_Font* font = TTF_OpenFont("DejaVuSansCondensed-Bold.ttf",10);
+			SDL_Surface * surface = TTF_RenderText_Solid(font, "Welcome to Gigi Labs", {0,0,0});
+			SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface);
+			int texture_width = 0;
+			int texture_height= 0;
+			SDL_QueryTexture(texture, NULL, NULL, &texture_width, &texture_height);
+			SDL_Rect dstrect = { 0, 0, texW, texH };
+			cout << font << endl;
 
 
 			stations.init();
@@ -289,17 +294,8 @@ int main(int argc, char* argv[]){
 					SDL_Delay( 1000/ framerate - ( SDL_GetTicks() - start_tick) );
 				}
 
-				//draw information text
-				char info_text[100];
-				sprintf(info_text, "%d",points);
-				SDL_Surface * surface = TTF_RenderText_Shaded(font, info_text, {0,0,0}, {242,242,242});
-				SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface);
-				int texture_width = 0;
-				int texture_height= 0;
-				SDL_QueryTexture(texture, NULL, NULL, &texture_width, &texture_height);
-				SDL_Rect texture_rect = { 0, 0, texture_width, texture_height};
 
-				SDL_RenderCopy(renderer, texture, NULL, &texture_rect);
+				SDL_RenderCopy(renderer, texture, NULL, NULL);
 				
 
 				//for one reason or another the program
@@ -309,11 +305,11 @@ int main(int argc, char* argv[]){
 				SDL_GetRendererInfo(renderer, &info);
 				SDL_RenderPresent(renderer);
 				frame++;
-				SDL_DestroyTexture(texture);
-				SDL_FreeSurface(surface);
 
 
 			}
+				SDL_DestroyTexture(texture);
+			SDL_FreeSurface(surface);
 			TTF_CloseFont(font);
 		}
 
