@@ -20,6 +20,8 @@ using namespace std;
 #include "lines.hpp"
 #include "passengers.hpp"
 
+extern STATUS status;
+
 
 
 void STATION::draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour){
@@ -67,6 +69,10 @@ void STATION::add_passenger(bool* allowed_shapes){
 		
 		am_passengers++;
 		am_passengers_per_type[passenger_shape]++;
+	}
+	if(am_passengers>station_max_passengers){
+		status.play_status = GAME_OVER;
+		cout << "new state" << endl;
 	}
 }
 SHAPE STATION::create(float x, float y, int new_id){
@@ -142,7 +148,8 @@ if(stations.size()>=1){
 
 	//draw staions
 	for(unsigned int i =0; i<stations.size(); i++){
-		stations[i].add_passenger(used_shape);
+		if(status.play_status == PLAYING)
+			stations[i].add_passenger(used_shape);
 		if((hovering_id == stations[i].id) && hovering){
 			stations[i].draw(renderer, trans,{0,255,0});
 		}else{

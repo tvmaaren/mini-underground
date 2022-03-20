@@ -1,8 +1,12 @@
+#include <SDL2/SDL_ttf.h>
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 #include "types.hpp"
 #include "misc.hpp"
+#include "settings.hpp"
 
 float distance2d(Point2d a, Point2d b){
 	return(sqrt(pow(a.x-b.x, 2) + pow(a.y-b.y, 2)));
@@ -102,4 +106,26 @@ SHAPE int_to_shape(int in){
 		
 	}
 	return SQUARE;//dummy
+}
+
+void draw_text(SDL_Renderer* renderer, char* string, int size, int x, int y){
+	TTF_Font* font = TTF_OpenFont(font_file, size);
+	if(!font) {
+		printf("TTF_OpenFont: %s\n", TTF_GetError());
+	}
+	SDL_Surface* text_surface
+		= TTF_RenderText_Shaded
+		(font, string, {0,0,0}, {242,242,242});
+
+	SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+	int texture_width = 0;
+	int texture_height= 0;
+	SDL_QueryTexture(texture, NULL, NULL, &texture_width, &texture_height);
+	SDL_Rect texture_rect = { x, y, texture_width, texture_height};
+
+	SDL_RenderCopy(renderer, texture, NULL, &texture_rect);
+	SDL_DestroyTexture(texture);
+	SDL_FreeSurface(text_surface);
+
+	TTF_CloseFont(font);
 }

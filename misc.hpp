@@ -14,3 +14,4 @@ node_t* add_node_after(node_t* node);
 node_t* remove_node(node_t* node);
 typedef enum {NEXT=1, PREV=0} LINK_DIRECTION;
 SHAPE int_to_shape(int in);
+void draw_text(SDL_Renderer* renderer, char* string, int size, int x, int y);

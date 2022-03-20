@@ -25,7 +25,7 @@ using namespace std;
 
 #define trackwidth 8*trans.Scale
 
-extern int points;
+extern STATUS status;
 
 extern STATION_LIST stations;
 extern vector<TRAIN> trains;
@@ -70,7 +70,7 @@ bool BUFFER::handle_mouse(float mouse_x, float mouse_y){
 void BUFFER::draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour, float mouse_x, float mouse_y){
 	if(!created)
 		return;
-	if(handle_mouse(mouse_x, mouse_y)){
+	if(status.play_status == PLAYING && handle_mouse(mouse_x, mouse_y)){
 		trans.drawline(renderer, bottom_x, bottom_y, middle_x,
 				middle_y, trackwidth,0,0,0,255);
 		trans.drawline(renderer, left_x, left_y, right_x,
@@ -208,7 +208,7 @@ void TRAIN::move(float seconds){
 			if(handle_passengers){
 			SHAPE shape = stations.stations[station_id].shape;
 			passengers-=am_passengers_per_type[shape];
-			points += am_passengers_per_type[shape];;
+			status.points += am_passengers_per_type[shape];;
 			am_passengers_per_type[shape]=0;
 
 			//remove passsengers from train
@@ -556,7 +556,8 @@ void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 		head = head->links[NEXT];
 	}
 	if(trains[train_id].initialised && length >= 2){
-		trains[train_id].move(1/(double)framerate);
+		if(status.play_status == PLAYING)
+			trains[train_id].move(1/(double)framerate);
 		trains[train_id].draw(renderer, trans);
 	}
 

@@ -112,7 +112,9 @@ typedef struct{
 	BUFFER bufferstop2;
 }LINE_T;
 
-int points=0;//the amount of passengers that have arrived at stations
+
+STATUS status={0,PLAYING};
+
 
 
 vector<LINE> lines;
@@ -212,7 +214,7 @@ int main(int argc, char* argv[]){
 				SDL_RenderClear(renderer);
 
 
-				if(mouse.let_go&&selected.line_i!=INT_MAX){
+				if(status.play_status==PLAYING&&mouse.let_go&&selected.line_i!=INT_MAX){
 					lines[selected.line_i].unselect();
 					selected.line_i=INT_MAX;
 				}
@@ -227,10 +229,11 @@ int main(int argc, char* argv[]){
 				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 				//Check if the mouse is hovering above a station
-				if(stations.check_hovering(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
+				if(status.play_status == PLAYING && stations.check_hovering(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
 					hovering.type = STATION_OBJECT;
 				}
 				for(int i =0; (unsigned int)i<lines.size(); i++){
+					if(status.play_status == PLAYING){
 					if(!hovering.type&&lines[i].handle_mouse(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
 						hovering.type = LINE_OBJECT;
 						hovering.line_i = i;
@@ -238,6 +241,7 @@ int main(int argc, char* argv[]){
 					if(mouse.click && hovering.type==LINE_OBJECT && hovering.line_i == i){
 						lines[i].click_select();
 						selected.line_i = i;
+					}
 					}
 					lines[i].draw(renderer, trans, inverse_trans_x(mouse.x),inverse_trans_y(mouse.y));
 				}
@@ -250,6 +254,7 @@ int main(int argc, char* argv[]){
 					}
 					lines[selected.line_i].click_add(stations.hovering_id);
 				}*/
+				if(status.play_status == PLAYING){
 				if(hovering.type == STATION_OBJECT){
 					if(mouse.click && selected.line_i == INT_MAX){
 						lines.resize(lines.size()+1);
@@ -263,6 +268,7 @@ int main(int argc, char* argv[]){
 				}
 				if(random() < chance_of_a_new_station){
 					stations.random_add();
+				}
 				}
 				if(mouse.click && selected.line_i==INT_MAX){
 					mouse.start_x = mouse.x;
@@ -291,15 +297,13 @@ int main(int argc, char* argv[]){
 
 				//draw information text
 				char info_text[100];
-				sprintf(info_text, "%d",points);
-				SDL_Surface * surface = TTF_RenderText_Shaded(font, info_text, {0,0,0}, {242,242,242});
-				SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface);
-				int texture_width = 0;
-				int texture_height= 0;
-				SDL_QueryTexture(texture, NULL, NULL, &texture_width, &texture_height);
-				SDL_Rect texture_rect = { 0, 0, texture_width, texture_height};
+				sprintf(info_text, "%d",status.points);
 
-				SDL_RenderCopy(renderer, texture, NULL, &texture_rect);
+				draw_text(renderer, info_text, 15, 10,10);
+				if(status.play_status==GAME_OVER){
+					char  text[] = {'G','A','M','E',' ','O','V','E','R','\0'};
+					draw_text(renderer, text, 30, screen_width/2,screen_height/2);
+				}
 				
 
 				//for one reason or another the program
@@ -309,8 +313,6 @@ int main(int argc, char* argv[]){
 				SDL_GetRendererInfo(renderer, &info);
 				SDL_RenderPresent(renderer);
 				frame++;
-				SDL_DestroyTexture(texture);
-				SDL_FreeSurface(surface);
 
 
 			}
