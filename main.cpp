@@ -70,7 +70,6 @@ class MOUSE{
 
 
 
-const int n_lines =7;
 
 typedef struct node node_t;
 
@@ -117,7 +116,7 @@ STATUS status={0,PLAYING};
 
 
 
-vector<LINE> lines;
+LINE lines[am_lines];
 vector<TRAIN> trains;
 
 int main(int argc, char* argv[]){
@@ -143,6 +142,10 @@ int main(int argc, char* argv[]){
 			}
 			TTF_Font* font = TTF_OpenFont("DejaVuSansCondensed-Bold.ttf",20);
 
+			//give lines their id
+			for(int i=0; i<am_lines; i++){
+				lines[i].id = i;
+			}
 
 			stations.init();
 
@@ -232,7 +235,9 @@ int main(int argc, char* argv[]){
 				if(status.play_status == PLAYING && stations.check_hovering(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
 					hovering.type = STATION_OBJECT;
 				}
-				for(int i =0; (unsigned int)i<lines.size(); i++){
+				for(int i =0; (unsigned int)i<am_lines; i++){
+					if(!lines[i].used)
+						continue;
 					if(status.play_status == PLAYING){
 					if(!hovering.type&&lines[i].handle_mouse(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
 						hovering.type = LINE_OBJECT;
@@ -246,21 +251,22 @@ int main(int argc, char* argv[]){
 					lines[i].draw(renderer, trans, inverse_trans_x(mouse.x),inverse_trans_y(mouse.y));
 				}
 				stations.draw(renderer, trans);
-				/*if(mouse.click  && hovering.type == STATION_OBJECT){
-					if(selected.line_i == INT_MAX ){
-						lines.resize(lines.size()+1);
-						selected.line_i = lines.size()-1;
-						lines[lines.size()-1].create(line_colours[selected.line_i]);
-					}
-					lines[selected.line_i].click_add(stations.hovering_id);
-				}*/
+				
 				if(status.play_status == PLAYING){
 				if(hovering.type == STATION_OBJECT){
 					if(mouse.click && selected.line_i == INT_MAX){
-						lines.resize(lines.size()+1);
-						lines[lines.size()-1].id=lines.size()-1;
-						selected.line_i = lines.size()-1;
-						lines[lines.size()-1].create(line_colours[selected.line_i]);
+						
+						//find not used lines
+						int free_i;
+						for(unsigned int i =0; i<am_lines; i++){
+							if(!lines[i].used){
+								free_i=i;
+								break;
+							}
+						}
+
+						selected.line_i = free_i;
+						lines[free_i].create(line_colours[selected.line_i]);
 						lines[selected.line_i].click_add(stations.hovering_id);
 					}else if(selected.line_i != INT_MAX){
 						lines[selected.line_i].click_add(stations.hovering_id);

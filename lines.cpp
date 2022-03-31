@@ -29,7 +29,7 @@ extern STATUS status;
 
 extern STATION_LIST stations;
 extern vector<TRAIN> trains;
-extern vector<LINE> lines;
+extern LINE lines[am_lines];
 
 
 void BUFFER::create(Point2d station1, Point2d station2){
@@ -107,6 +107,7 @@ void TRAIN::draw(SDL_Renderer* renderer,Transform& trans){
 bool TRAIN::find_next_station(){
 	if(!start_line || !start_line->links[direction]){
 		//first try to find te station on the line
+		
 		for(node_t* head = lines[line_id].first_station; head;
 				head=head->links[NEXT]){
 			if(head->value==station_id){
@@ -297,6 +298,7 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 
 void LINE::create(COLOUR new_colour){
 	colour = new_colour;
+	used = true;
 }
 
 

@@ -69,7 +69,8 @@ class TRAIN{
 };
 class LINE{
 	public:
-	int id;
+	bool used=false;
+	unsigned int id;
 	node_t* first_station;
 	node_t* last_station;
 	node_t* selected;
@@ -100,6 +101,5 @@ class LINE{
 	//keeps track of all tracks that the player wants to
 	//remove, but cannot be removed, because a train
 	//still has to go over it
-	//TODO: Make it a dynamic
 	node_t* removed_segments=NULL;
 };

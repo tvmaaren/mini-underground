@@ -9,3 +9,5 @@
 #define station_max_passengers 10
 
 #define font_file "DejaVuSansCondensed-Bold.ttf"
+
+#define am_lines 10
