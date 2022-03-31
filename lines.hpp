@@ -23,7 +23,7 @@ class BUFFER{
 	bool created = false;
 	void create(Point2d station1, Point2d station2);
 	bool handle_mouse(float mouse_x, float mouse_y);
-	void draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour, float mouse_x, float mouse_y);
+	void draw(SDL_Renderer* renderer,Transform& trans, Uint32 colour, float mouse_x, float mouse_y);
 };
 
 class TRAIN{
@@ -31,7 +31,7 @@ class TRAIN{
 
 	bool initialised =false;
 
-	enum {AT_STATION, ON_LINE, ON_REMOVED_LINE} location_type = AT_STATION;
+	LOCATION_TYPE location_type = AT_STATION;
 	LINK_DIRECTION direction;
 
 	int passengers;
@@ -50,7 +50,7 @@ class TRAIN{
 
 	float width = 10;
 	float height = 20;
-	COLOUR colour;
+	Uint32 colour;
 
 	float x0;
 	float y0;
@@ -61,7 +61,7 @@ class TRAIN{
 	float x,y;
 	void draw(SDL_Renderer* renderer,Transform& trans);
 
-	void init(node_t* start_station,int new_line_id, node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new);
+	void init(node_t* start_station,int new_line_id, node_t** new_removed_segments, LINK_DIRECTION in_direction, Uint32 colour_new);
 	void move(float seconds);
 	bool should_enter(SHAPE shape, int station_id);
 	bool should_leave(SHAPE shape, int station_id);
@@ -79,11 +79,13 @@ class LINE{
 	int length=0;
 	BUFFER bufferstop1;
 	BUFFER bufferstop2;
-	COLOUR colour;
+	Uint32 colour;
 	LINK_DIRECTION select_direction=NEXT;
 	node_t* hovering;
 	
-	void create(COLOUR new_colour);
+	void create(Uint32 new_colour, int new_id);
+	void use();
+	void stop_using();
 	//make sure the station is already put in the right list when you add it
 	void click_add(int station_id);//true if the line should be removed
 

@@ -13,23 +13,23 @@ class Transform{
 	Matrix m;
 	float Scale;
 	void drawline(SDL_Renderer* renderer, float x1, float y1, float x2,
-			float y2, int thickness, int r, int g, int b, int a);
+			float y2, int thickness, Uint32 colour);
 	void drawcircle(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void drawrectangle(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, 
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void drawgem(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void drawngon(SDL_Renderer* renderer, int n,float start_angle, float x, float y, float radius,
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void drawtriangle(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void drawpentagon(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void drawshape(SDL_Renderer* renderer, SHAPE shape, float x, float y, float radius,
-		int r, int g, int b, int a);
+		Uint32 colour);
 	void init();
 	void translate(int x,int y);
 	void rotate(float angle);

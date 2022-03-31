@@ -10,4 +10,21 @@
 
 #define font_file "DejaVuSansCondensed-Bold.ttf"
 
-#define am_lines 10
+#define am_lines 6
+
+/*const COLOUR line_colours[]={
+{255,0,255},
+{255,0,0},
+{0,255,0},
+{255,255,0},
+{0,0,255},
+{0,0,0},
+{0,255,255}};*/
+
+const Uint32 line_colours[]={
+0xFFFF00FF,
+0xFFFF0000,
+0xFF00FF00,
+0xFFFFFF00,
+0xFF0000FF,
+0xFF00FFFF};

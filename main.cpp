@@ -27,14 +27,6 @@ using namespace std;
 #define inverse_trans_y(y) (y/scale-camera_y)
 
 
-const COLOUR line_colours[]={
-{255,0,255},
-{255,0,0},
-{0,255,0},
-{255,255,0},
-{0,0,255},
-{0,0,0},
-{0,255,255}};
 
 
 float calc_scale(int width, int height){
@@ -142,9 +134,9 @@ int main(int argc, char* argv[]){
 			}
 			TTF_Font* font = TTF_OpenFont("DejaVuSansCondensed-Bold.ttf",20);
 
-			//give lines their id
+			//initialize lines
 			for(int i=0; i<am_lines; i++){
-				lines[i].id = i;
+				lines[i].create(line_colours[i],i);
 			}
 
 			stations.init();
@@ -266,7 +258,7 @@ int main(int argc, char* argv[]){
 						}
 
 						selected.line_i = free_i;
-						lines[free_i].create(line_colours[selected.line_i]);
+						lines[free_i].use();
 						lines[selected.line_i].click_add(stations.hovering_id);
 					}else if(selected.line_i != INT_MAX){
 						lines[selected.line_i].click_add(stations.hovering_id);
@@ -310,7 +302,22 @@ int main(int argc, char* argv[]){
 					char  text[] = {'G','A','M','E',' ','O','V','E','R','\0'};
 					draw_text(renderer, text, 30, screen_width/2,screen_height/2);
 				}
-				
+
+				//draw line information
+				for(int i =0; i<am_lines; i++){
+					int y_pos = i*20+100;
+					Uint32 colour =lines[i].colour;
+					if(lines[i].used){
+						Uint32 black = 0xFF000000;
+						filledCircleColor(renderer, 10, y_pos, 7, black);
+						boxColor(renderer, 10, y_pos-7, 20, y_pos+7, black);
+						filledCircleColor(renderer, 20, y_pos, 7, black);
+					}
+
+					filledCircleColor(renderer, 10, y_pos, 5, colour);
+					boxColor(renderer, 10, y_pos-5, 20, y_pos+5, colour);
+					filledCircleColor(renderer, 20, y_pos, 5, colour);
+				}
 
 				//for one reason or another the program
 				//crashes at some points when these two lines

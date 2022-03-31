@@ -15,13 +15,13 @@
 
 using namespace std;
 
-#include "settings.hpp"
 #include "types.hpp"
 #include "transform.hpp"
 #include "misc.hpp"
 #include "lines.hpp"
 #include "stations.hpp"
 #include "passengers.hpp"
+#include "settings.hpp"
 
 #define trackwidth 8*trans.Scale
 
@@ -67,19 +67,19 @@ bool BUFFER::handle_mouse(float mouse_x, float mouse_y){
 	      );
 	return(hovering);
 }
-void BUFFER::draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour, float mouse_x, float mouse_y){
+void BUFFER::draw(SDL_Renderer* renderer,Transform& trans, Uint32 colour, float mouse_x, float mouse_y){
 	if(!created)
 		return;
 	if(status.play_status == PLAYING && handle_mouse(mouse_x, mouse_y)){
 		trans.drawline(renderer, bottom_x, bottom_y, middle_x,
-				middle_y, trackwidth,0,0,0,255);
+				middle_y, trackwidth,0xFF000000);
 		trans.drawline(renderer, left_x, left_y, right_x,
-				right_y, trackwidth,0,0,0,255);
+				right_y, trackwidth,0xFF000000);
 	}else{
 		trans.drawline(renderer, bottom_x, bottom_y, middle_x,
-				middle_y, trackwidth,colour.r, colour.g, colour.b, 255);
+				middle_y, trackwidth,colour);
 		trans.drawline(renderer, left_x, left_y, right_x,
-				right_y, trackwidth,colour.r, colour.g, colour.b, 255);
+				right_y, trackwidth,colour);
 	}
 
 }
@@ -90,12 +90,12 @@ void TRAIN::draw(SDL_Renderer* renderer,Transform& trans){
 	train_trans.rotate(atan(slope)+M_PI/2);
 	train_trans.translate(x, y);
 	train_trans.m = matrix_mul(trans.m,train_trans.m);
-	train_trans.drawrectangle(renderer, -width, -height, width, height, colour.r,colour.g,colour.b,255);
+	train_trans.drawrectangle(renderer, -width, -height, width, height, colour);
 
 	int passenger_i=0;
 	for(int i=0; i<shapes; i++){
 		for(int ii=0; ii<am_passengers_per_type[i]; ii++){
-			train_trans.drawshape(renderer, int_to_shape(i),0, height-height/max_passengers-passenger_i*height*2/max_passengers, 4, 0,0,0, 255);
+			train_trans.drawshape(renderer, int_to_shape(i),0, height-height/max_passengers-passenger_i*height*2/max_passengers, 4, 0xFF000000);
 			passenger_i++;
 		}
 	}
@@ -154,7 +154,9 @@ bool TRAIN::find_next_station(){
 
 }
 
-void TRAIN::init(node_t* start_station,int new_line_id, node_t** new_removed_segments, LINK_DIRECTION in_direction, COLOUR colour_new){
+void TRAIN::init(node_t* start_station,int new_line_id, node_t**
+		new_removed_segments, LINK_DIRECTION in_direction, Uint32
+		colour_new){
 	initialised = true;
 	start_line = start_station;
 	line_id = new_line_id;
@@ -296,11 +298,22 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 	return(dist_next_station<=dist_current_station);
 }
 
-void LINE::create(COLOUR new_colour){
+void LINE::create(Uint32 new_colour, int new_id){
 	colour = new_colour;
+	id = new_id;
+}
+void LINE::use(){
 	used = true;
 }
 
+void LINE::stop_using(){
+	used = false;
+	length = 0;
+	bufferstop1.created = false;
+	bufferstop2.created = false;
+	trains[train_id].location_type = AT_STATION;
+	trains[train_id].initialised = false;
+}
 
 
 //make sure the station is already put in the right list when you add it
@@ -373,6 +386,8 @@ void LINE::click_add(int station_id){
 
 		length--;
 		check_removed();
+		}else{
+			stop_using();
 		}
 	//add a station	
 	}else{
@@ -433,14 +448,17 @@ void LINE::click_add(int station_id){
 		set_train_id=true;
 	}
 	if(length >=2 && !trains[train_id].initialised){
+		cout << "train init" << endl;
 		trains[train_id].init(first_station,id,&removed_segments, NEXT, colour);
 	}
 
 	if(!first_station->links[PREV] && length>=2){
-		bufferstop1.create(stations.stations[first_station->value].pos, stations.stations[first_station->links[NEXT]->value].pos);
+		bufferstop1.create(stations.stations[first_station->value].pos,
+				stations.stations[first_station->links[NEXT]->value].pos);
 	}
 	if(!last_station->links[NEXT] && length>=2){
-		bufferstop2.create(stations.stations[last_station->value].pos, stations.stations[last_station->links[PREV]->value].pos);
+		bufferstop2.create(stations.stations[last_station->value].pos,
+				stations.stations[last_station->links[PREV]->value].pos);
 	}
 	return;
 }
@@ -520,8 +538,8 @@ void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 			if(selected== head){
 				trans.drawline(renderer, stations.stations[head->value].pos.x, 
 						stations.stations[head->value].pos.y, mouse_x, 
-						mouse_y, trackwidth,colour.r, colour.g, colour.b, 255);
-				trans.drawcircle(renderer, mouse_x, mouse_y, 8, 255, 0, 0, 255);
+						mouse_y, trackwidth,colour);
+				trans.drawcircle(renderer, mouse_x, mouse_y, 8, 0xFF0000FF);
 			}
 				
 
@@ -536,23 +554,23 @@ void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 		if(selected == head && select_direction == PREV){
 			trans.drawline(renderer, stations.stations[head->value].pos.x, 
 					stations.stations[head->value].pos.y, mouse_x, 
-					mouse_y, trackwidth,colour.r, colour.g, colour.b, 255);
-			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour.r, colour.g, colour.b, 255);
-			trans.drawcircle(renderer, mouse_x, mouse_y, 8, 255, 0, 0, 255);
+					mouse_y, trackwidth,colour);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour);
+			trans.drawcircle(renderer, mouse_x, mouse_y, 8, 0xFF0000FF);
 		}
 
 		else if(selected == head){
-			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour.r, colour.g, colour.b, 127);
-			trans.drawline(renderer, x0, y0, mouse_x, mouse_y, trackwidth,colour.r, colour.g, colour.b, 255);
-			trans.drawline(renderer, mouse_x, mouse_y, x1, y1, trackwidth,colour.r, colour.g, colour.b, 255);
-			trans.drawcircle(renderer, mouse_x, mouse_y, 8, 255, 0, 0, 255);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,(colour & 0x00FFFFFF)+0x7F000000/*alpha:127*/);
+			trans.drawline(renderer, x0, y0, mouse_x, mouse_y, trackwidth,colour);
+			trans.drawline(renderer, mouse_x, mouse_y, x1, y1, trackwidth,colour);
+			trans.drawcircle(renderer, mouse_x, mouse_y, 8, 0xFF0000FF);
 		}
 
 		else if(hovering== head){
-			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,0, 0, 0, 255);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,0xFF000000);
 		}
 		else
-			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour.r, colour.g, colour.b, 255);
+			trans.drawline(renderer, x0, y0, x1, y1, trackwidth,colour);
 		prev = head->value;
 		}
 		head = head->links[NEXT];
@@ -569,7 +587,7 @@ void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 					 stations.stations[head->value].pos.y,
 					 stations.stations[head->links[NEXT]->value].pos.x,
 					 stations.stations[head->links[NEXT]->value].pos.y,
-					 trackwidth,colour.r, colour.g, colour.b, 127);
+					 trackwidth,colour);
 	}
 
 }

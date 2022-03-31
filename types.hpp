@@ -1,8 +1,8 @@
 #include <climits>
 
-typedef struct {
+/*typedef struct {
 	unsigned char r,g,b;
-}COLOUR;
+}COLOUR;*/
 typedef struct{
 	float x;
 	float y;
@@ -16,4 +16,5 @@ typedef struct{
 }STATUS;
 
 typedef enum {SQUARE=0, CIRCLE=1, TRIANGLE=2, PENTAGON=3, GEM=4} SHAPE;
+typedef enum {AT_STATION, ON_LINE, ON_REMOVED_LINE} LOCATION_TYPE;
 const int shapes=5;

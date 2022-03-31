@@ -14,16 +14,16 @@
 
 
 void Transform::drawline(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, int thickness,
-		int r, int g, int b, int a){
+		Uint32 colour){
 
 	transform_coordinates(&x1, &y1);
 	transform_coordinates(&x2, &y2);
 
-	thickLineRGBA(renderer, x1, y1, x2, y2, thickness,r, g, b, a);
+	thickLineColor(renderer, x1, y1, x2, y2, thickness,colour);
 }
 
 void Transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float x2, float y2, 
-		int r, int g, int b, int a){
+		Uint32 colour){
 	
 	
 	float fvertices_x[] = {x1, x2, x2, x1};
@@ -38,12 +38,12 @@ void Transform::drawrectangle(SDL_Renderer* renderer, float x1, float y1, float 
 		vertices_y[i] = fvertices_y[i];
 	}
 	
-	filledPolygonRGBA(renderer, vertices_x, vertices_y, 4,r, g, b, a);
+	filledPolygonColor(renderer, vertices_x, vertices_y, 4,colour);
 
 }
 
 void Transform::drawngon(SDL_Renderer* renderer, int n, float start_angle, float x, float y, float radius,
-		int r, int g, int b, int a){
+		Uint32 colour){
 	float fvertices_x[n];
 	float fvertices_y[n];
 	
@@ -57,53 +57,53 @@ void Transform::drawngon(SDL_Renderer* renderer, int n, float start_angle, float
 		vertices_x[i] = fvertices_x[i];
 		vertices_y[i] = fvertices_y[i];
 	}
-	filledPolygonRGBA(renderer, vertices_x, vertices_y, n,r, g, b, a);
+	filledPolygonColor(renderer, vertices_x, vertices_y, n,colour);
 }
 
 void Transform::drawtriangle(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a){
-	drawngon(renderer, 3,-M_PI/2, x, y, radius, r, g, b, a);
+		Uint32 colour){
+	drawngon(renderer, 3,-M_PI/2, x, y, radius, colour);
 }
 void Transform::drawpentagon(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a){
-	drawngon(renderer, 5,-M_PI/2, x, y, radius, r, g, b, a);
+		Uint32 colour){
+	drawngon(renderer, 5,-M_PI/2, x, y, radius, colour);
 }
 
 void Transform::drawsquare(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a){
+		Uint32 colour){
 	//drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
-	drawngon(renderer, 4,M_PI/4, x, y, radius, r, g, b, a);
+	drawngon(renderer, 4,M_PI/4, x, y, radius, colour);
 }
 void Transform::drawgem(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a){
+		Uint32 colour){
 	//drawrectangle(renderer, x-radius, y-radius, x+radius, y+radius, r, g, b, a);
-	drawngon(renderer, 4,0, x, y, radius, r, g, b, a);
+	drawngon(renderer, 4,0, x, y, radius, colour);
 }
 	
 void Transform::drawcircle(SDL_Renderer* renderer, float x, float y, float radius,
-		int r, int g, int b, int a){
-	drawngon(renderer, 100,0, x, y, radius, r, g, b, a);
+		Uint32 colour){
+	drawngon(renderer, 100,0, x, y, radius, colour);
 	//transform_coordinates(&x, &y);
-	//filledCircleRGBA(renderer*scale, x, y, radius, r, g, b, a);
+	//filledCircleColor(renderer*scale, x, y, radius, r, g, b, a);
 }
 
 void Transform::drawshape(SDL_Renderer* renderer, SHAPE shape, float x, float y, float radius,
-		int r, int g, int b, int a){
+		Uint32 colour){
 	switch(shape){
 		case(SQUARE):
-			drawsquare(renderer, x,y,radius,r,g,b,a);
+			drawsquare(renderer, x,y,radius,colour);
 			break;
 		case(CIRCLE):
-			drawcircle(renderer, x,y,radius,r,g,b,a);
+			drawcircle(renderer, x,y,radius,colour);
 			break;
 		case(TRIANGLE):
-			drawtriangle(renderer, x,y,radius,r,g,b,a);
+			drawtriangle(renderer, x,y,radius,colour);
 			break;
 		case(PENTAGON):
-			drawpentagon(renderer, x,y,radius,r,g,b,a);
+			drawpentagon(renderer, x,y,radius,colour);
 			break;
 		case(GEM):
-			drawgem(renderer, x,y,radius,r,g,b,a);
+			drawgem(renderer, x,y,radius,colour);
 			break;
 	}
 }

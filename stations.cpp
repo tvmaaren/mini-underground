@@ -24,13 +24,13 @@ extern STATUS status;
 
 
 
-void STATION::draw(SDL_Renderer* renderer,Transform& trans, COLOUR colour){
-	trans.drawshape(renderer, shape, pos.x, pos.y, 8, colour.r, colour.g, colour.b, 255);
+void STATION::draw(SDL_Renderer* renderer,Transform& trans, Uint32 colour){
+	trans.drawshape(renderer, shape, pos.x, pos.y, 8, colour);
 	
 	int passenger_i = 1;
 	for(int i = 0; i<shapes; i++){
 		for(int ii =1; ii<=am_passengers_per_type[i] ; ii++){
-			trans.drawshape(renderer, int_to_shape(i), pos.x+10*passenger_i, pos.y, 4, 0, 0, 0, 255);
+			trans.drawshape(renderer, int_to_shape(i), pos.x+10*passenger_i, pos.y, 4, 0xFF000000);
 			passenger_i++;
 		}
 	}
@@ -151,9 +151,9 @@ if(stations.size()>=1){
 		if(status.play_status == PLAYING)
 			stations[i].add_passenger(used_shape);
 		if((hovering_id == stations[i].id) && hovering){
-			stations[i].draw(renderer, trans,{0,255,0});
+			stations[i].draw(renderer, trans,0xFF00FF00);
 		}else{
-			stations[i].draw(renderer, trans,{255,0,0});
+			stations[i].draw(renderer, trans,0xFF0000FF);
 			
 		}
 	}}
