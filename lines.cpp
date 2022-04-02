@@ -521,6 +521,12 @@ bool LINE::handle_mouse(float mouse_x, float mouse_y){
 }
 void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 		float mouse_x, float mouse_y){
+	//check if there is actually something to draw
+	if(length <= 1 && !selected){
+		stop_using();
+		return;
+	}
+
 	bool first = true;
 	int prev = 0;
 

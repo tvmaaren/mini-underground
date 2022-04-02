@@ -133,6 +133,11 @@ int main(int argc, char* argv[]){
 				   exit(2);
 			}
 			TTF_Font* font = TTF_OpenFont("DejaVuSansCondensed-Bold.ttf",20);
+			std::string message;
+			bool show_message=false;
+			unsigned int message_end_frame;// at wich frame the
+						       // message shouldn't be
+						       // displayed anymore
 
 			//initialize lines
 			for(int i=0; i<am_lines; i++){
@@ -171,7 +176,7 @@ int main(int argc, char* argv[]){
 			object_pointer hovering;
 			selection_pointer selected;
 
-			int frame = 0;
+			unsigned int frame = 0;
 
 			while (!done) {
 				SDL_GetWindowSize(window, &screen_width,&screen_height);
@@ -249,17 +254,23 @@ int main(int argc, char* argv[]){
 					if(mouse.click && selected.line_i == INT_MAX){
 						
 						//find not used lines
-						int free_i;
+						int free_i=INT_MAX;
 						for(unsigned int i =0; i<am_lines; i++){
-							if(!lines[i].used){
+							if(!lines[i].used && line_unlocked[i]<=status.points){
 								free_i=i;
 								break;
 							}
 						}
+						if(free_i != INT_MAX){
 
-						selected.line_i = free_i;
-						lines[free_i].use();
-						lines[selected.line_i].click_add(stations.hovering_id);
+							selected.line_i = free_i;
+							lines[free_i].use();
+							lines[selected.line_i].click_add(stations.hovering_id);
+						}else{
+							message = "You've ran out of lines";
+							show_message=true;
+							message_end_frame = frame + framerate*1;
+						}
 					}else if(selected.line_i != INT_MAX){
 						lines[selected.line_i].click_add(stations.hovering_id);
 					}
@@ -297,16 +308,31 @@ int main(int argc, char* argv[]){
 				char info_text[100];
 				sprintf(info_text, "%d",status.points);
 
-				draw_text(renderer, info_text, 15, 10,10);
+				draw_text(renderer, info_text, 15, 10,10, 0xFF000000);
 				if(status.play_status==GAME_OVER){
 					char  text[] = {'G','A','M','E',' ','O','V','E','R','\0'};
-					draw_text(renderer, text, 30, screen_width/2,screen_height/2);
+					draw_text(renderer, text, 30, screen_width/2,screen_height/2, 0xFF000000);
 				}
+
+				//drw message
+				if(show_message){
+					draw_text(renderer, message.c_str(), 20, 30,10, 0xFFFF0000);
+					if(frame> message_end_frame){
+						show_message=false;
+					}
+				}
+					
 
 				//draw line information
 				for(int i =0; i<am_lines; i++){
 					int y_pos = i*20+100;
-					Uint32 colour =lines[i].colour;
+					Uint32 colour;
+					if(status.points>=line_unlocked[i]){
+						colour =lines[i].colour;
+					}else{
+						colour =0xFF505050;
+					}
+
 					if(lines[i].used){
 						Uint32 black = 0xFF000000;
 						filledCircleColor(renderer, 10, y_pos, 7, black);

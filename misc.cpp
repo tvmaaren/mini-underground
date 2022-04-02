@@ -108,14 +108,16 @@ SHAPE int_to_shape(int in){
 	return SQUARE;//dummy
 }
 
-void draw_text(SDL_Renderer* renderer, char* string, int size, int x, int y){
+void draw_text(SDL_Renderer* renderer, const char* string, int size, int x, int y, Uint32 colour){
 	TTF_Font* font = TTF_OpenFont(font_file, size);
 	if(!font) {
 		printf("TTF_OpenFont: %s\n", TTF_GetError());
 	}
+	SDL_Colour colour_sdl = {(Uint8)((colour & 0x00FF0000) >> 16),
+		(Uint8)((colour & 0x0000FF00) >> 8), (Uint8)((colour & 0x000000FF))};
 	SDL_Surface* text_surface
 		= TTF_RenderText_Shaded
-		(font, string, {0,0,0}, {242,242,242});
+		(font, string,colour_sdl , {242,242,242});
 
 	SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, text_surface);
 	int texture_width = 0;
@@ -129,3 +131,4 @@ void draw_text(SDL_Renderer* renderer, char* string, int size, int x, int y){
 
 	TTF_CloseFont(font);
 }
+

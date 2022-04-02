@@ -28,3 +28,11 @@ const Uint32 line_colours[]={
 0xFFFFFF00,
 0xFF0000FF,
 0xFF00FFFF};
+
+const int line_unlocked[]={
+0,
+0,
+20,
+100,
+200,
+300};
