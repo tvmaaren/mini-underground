@@ -8,6 +8,7 @@
 #include <SDL2/SDL_ttf.h>
 #endif
 
+#include <string>
 #include <vector>
 #include <math.h>
 #include <climits>
