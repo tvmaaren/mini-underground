@@ -1,4 +1,8 @@
+#ifdef __ANDROID__
+#include <SDL_ttf.h>
+#else
 #include <SDL2/SDL_ttf.h>
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -107,28 +111,3 @@ SHAPE int_to_shape(int in){
 	}
 	return SQUARE;//dummy
 }
-
-void draw_text(SDL_Renderer* renderer, const char* string, int size, int x, int y, Uint32 colour){
-	TTF_Font* font = TTF_OpenFont(font_file, size);
-	if(!font) {
-		printf("TTF_OpenFont: %s\n", TTF_GetError());
-	}
-	SDL_Colour colour_sdl = {(Uint8)((colour & 0x00FF0000) >> 16),
-		(Uint8)((colour & 0x0000FF00) >> 8), (Uint8)((colour & 0x000000FF))};
-	SDL_Surface* text_surface
-		= TTF_RenderText_Shaded
-		(font, string,colour_sdl , {242,242,242});
-
-	SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, text_surface);
-	int texture_width = 0;
-	int texture_height= 0;
-	SDL_QueryTexture(texture, NULL, NULL, &texture_width, &texture_height);
-	SDL_Rect texture_rect = { x, y, texture_width, texture_height};
-
-	SDL_RenderCopy(renderer, texture, NULL, &texture_rect);
-	SDL_DestroyTexture(texture);
-	SDL_FreeSurface(text_surface);
-
-	TTF_CloseFont(font);
-}
-

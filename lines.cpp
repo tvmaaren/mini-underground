@@ -448,7 +448,6 @@ void LINE::click_add(int station_id){
 		set_train_id=true;
 	}
 	if(length >=2 && !trains[train_id].initialised){
-		cout << "train init" << endl;
 		trains[train_id].init(first_station,id,&removed_segments, NEXT, colour);
 	}
 

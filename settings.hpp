@@ -8,7 +8,11 @@
 
 #define station_max_passengers 10
 
+#ifdef __ANDROID__
+#define font_file "fonts/dejavusanscondensed-bold.ttf"
+#else
 #define font_file "DejaVuSansCondensed-Bold.ttf"
+#endif
 
 #define am_lines 6
 

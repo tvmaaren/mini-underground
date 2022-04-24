@@ -1,6 +1,7 @@
 #ifdef __ANDROID__
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
+#include <SDL_ttf.h>
 #else
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
@@ -72,7 +73,6 @@ void STATION::add_passenger(bool* allowed_shapes){
 	}
 	if(am_passengers>station_max_passengers){
 		status.play_status = GAME_OVER;
-		cout << "new state" << endl;
 	}
 }
 SHAPE STATION::create(float x, float y, int new_id){

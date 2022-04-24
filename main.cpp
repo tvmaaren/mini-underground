@@ -1,14 +1,13 @@
 #ifdef __ANDROID__
 #include <SDL.h>
 #include <SDL2_gfxPrimitives.h>
+#include <SDL_ttf.h>
 #else
 #include <SDL2/SDL.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <SDL2/SDL_ttf.h>
-#include <iostream>
 #endif
 
-#include <stdlib.h>
 #include <vector>
 #include <math.h>
 #include <climits>
@@ -111,6 +110,30 @@ STATUS status={0,PLAYING};
 LINE lines[am_lines];
 vector<TRAIN> trains;
 
+void draw_text(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x, int y, Uint32 colour){
+	//TTF_Font* font = TTF_OpenFont(font_file, size);
+	if(!font) {
+		printf("TTF_OpenFont: %s\n", TTF_GetError());
+	}
+	SDL_Colour colour_sdl = {(Uint8)((colour & 0x00FF0000) >> 16),
+				 (Uint8)((colour & 0x0000FF00) >> 8),
+				 (Uint8)((colour & 0x000000FF))};
+	SDL_Surface* text_surface
+		= TTF_RenderText_Shaded
+		(font, string,colour_sdl, {242,242,242});
+
+	SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+	int texture_width = 0;
+	int texture_height= 0;
+	SDL_QueryTexture(texture, NULL, NULL, &texture_width, &texture_height);
+	SDL_Rect texture_rect = { x, y, texture_width, texture_height};
+
+	SDL_RenderCopy(renderer, texture, NULL, &texture_rect);
+	SDL_DestroyTexture(texture);
+	SDL_FreeSurface(text_surface);
+
+}
+
 int main(int argc, char* argv[]){
 	if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
 		SDL_Window* window = NULL;
@@ -127,13 +150,11 @@ int main(int argc, char* argv[]){
 			SDL_bool done = SDL_FALSE;
 
 
-			 	
-			if(TTF_Init()==-1) {
-				   cout << "TTF_Init:" << TTF_GetError() << endl;
-				   exit(2);
-			}
-			TTF_Font* font = TTF_OpenFont("DejaVuSansCondensed-Bold.ttf",20);
-			std::string message;
+			string message;
+			TTF_Init();
+
+
+
 			bool show_message=false;
 			unsigned int message_end_frame;// at wich frame the
 						       // message shouldn't be
@@ -155,6 +176,9 @@ int main(int argc, char* argv[]){
 			SDL_Event event;
 
 			float scale = calc_scale(screen_width, screen_height);
+			TTF_Font* font_15 = TTF_OpenFont(font_file, 15*scale);
+			TTF_Font* font_30 = TTF_OpenFont(font_file, 30*scale);
+			TTF_Font* font_20 = TTF_OpenFont(font_file, 20*scale);
 
 
 			float camera_x= screen_width/2/scale;
@@ -308,15 +332,15 @@ int main(int argc, char* argv[]){
 				char info_text[100];
 				sprintf(info_text, "%d",status.points);
 
-				draw_text(renderer, info_text, 15, 10,10, 0xFF000000);
+				draw_text(renderer, info_text, font_15, 10,10, 0xFF000000);
 				if(status.play_status==GAME_OVER){
 					char  text[] = {'G','A','M','E',' ','O','V','E','R','\0'};
-					draw_text(renderer, text, 30, screen_width/2,screen_height/2, 0xFF000000);
+					draw_text(renderer, text, font_30, screen_width/2,screen_height/2, 0xFF000000);
 				}
 
 				//drw message
 				if(show_message){
-					draw_text(renderer, message.c_str(), 20, 30,10, 0xFFFF0000);
+					draw_text(renderer, message.c_str(), font_20, 30,10, 0xFFFF0000);
 					if(frame> message_end_frame){
 						show_message=false;
 					}
@@ -325,7 +349,7 @@ int main(int argc, char* argv[]){
 
 				//draw line information
 				for(int i =0; i<am_lines; i++){
-					int y_pos = i*20+100;
+					int y_pos = screen_height*(0.25+0.25/am_lines*i);
 					Uint32 colour;
 					if(status.points>=line_unlocked[i]){
 						colour =lines[i].colour;
@@ -335,14 +359,14 @@ int main(int argc, char* argv[]){
 
 					if(lines[i].used){
 						Uint32 black = 0xFF000000;
-						filledCircleColor(renderer, 10, y_pos, 7, black);
-						boxColor(renderer, 10, y_pos-7, 20, y_pos+7, black);
-						filledCircleColor(renderer, 20, y_pos, 7, black);
+						filledCircleColor(renderer, scale*10, y_pos, scale*7, black);
+						boxColor(renderer, 10, y_pos-7*scale, scale*20, y_pos+scale*7, black);
+						filledCircleColor(renderer, scale*20, y_pos, scale*7, black);
 					}
 
-					filledCircleColor(renderer, 10, y_pos, 5, colour);
-					boxColor(renderer, 10, y_pos-5, 20, y_pos+5, colour);
-					filledCircleColor(renderer, 20, y_pos, 5, colour);
+					filledCircleColor(renderer, scale*10, y_pos, scale*5, colour);
+					boxColor(renderer, scale*10, y_pos-scale*5, scale*20, y_pos+scale*5, colour);
+					filledCircleColor(renderer, scale*20, y_pos, scale*5, colour);
 				}
 
 				//for one reason or another the program
@@ -355,7 +379,9 @@ int main(int argc, char* argv[]){
 
 
 			}
-			TTF_CloseFont(font);
+			TTF_CloseFont(font_15);
+			TTF_CloseFont(font_30);
+			TTF_CloseFont(font_20);
 		}
 
 		if (renderer) {
