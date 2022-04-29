@@ -30,5 +30,6 @@ class STATION_LIST{
 		bool check_hovering(float mouse_x, float mouse_y);
 		void draw(SDL_Renderer* renderer, Transform& trans);
 		void init();
+		void clear();
 
 };

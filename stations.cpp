@@ -164,3 +164,12 @@ void STATION_LIST::init(){
 		used_shape[i]=false;
 	}
 }
+
+void STATION_LIST::clear(){
+	max_station_x=0;
+	max_station_y=0;
+	min_station_x=0;
+	min_station_y=0;
+	stations.clear();
+	init();
+}

@@ -277,6 +277,7 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 	//to the current station
 	
 	int dist_current_station = min_distance_stations(shape, station_id, NULL);
+	if(dist_current_station == INT_MAX)return false;
 	int next_station;
 	if(start_line->links[direction]){
 		next_station = start_line->links[direction]->value;
@@ -310,8 +311,11 @@ void LINE::stop_using(){
 	length = 0;
 	bufferstop1.created = false;
 	bufferstop2.created = false;
-	trains[train_id].location_type = AT_STATION;
-	trains[train_id].initialised = false;
+	if(set_train_id){
+		trains[train_id].location_type = AT_STATION;
+		trains[train_id].initialised = false;
+		set_train_id=false;
+	}
 }
 
 

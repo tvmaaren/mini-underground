@@ -60,6 +60,24 @@ class MOUSE{
 };
 
 
+void draw_text(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x, int y, Uint32 colour);
+void draw_text_centered(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x, int y, Uint32 colour);
+
+//returns true if the mouse is on this box
+bool handle_click_box(SDL_Renderer* renderer,const char* text, TTF_Font* font, float mouse_x,float mouse_y,float x1,float y1,float x2,float y2){
+
+	bool ret= false;
+	Transform trans;
+	trans.init();
+	if(mouse_x > x1 && mouse_y > y1 && mouse_x < x2 && mouse_y < y2){
+		ret=true;
+		trans.drawrectangle(renderer, x1,y1,x2,y2,0xFFFF0000);
+	}else{
+		trans.drawrectangle(renderer, x1,y1,x2,y2,0xFFD00000);
+	}
+	draw_text_centered(renderer, text, font, (x2+x1)/2, (y2+y1)/2, 0xFF000000);
+	return ret;
+}
 
 
 
@@ -120,8 +138,8 @@ void draw_text(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x
 				 (Uint8)((colour & 0x0000FF00) >> 8),
 				 (Uint8)((colour & 0x000000FF))};
 	SDL_Surface* text_surface
-		= TTF_RenderText_Shaded
-		(font, string,colour_sdl, {242,242,242});
+		= TTF_RenderText_Blended
+		(font, string,colour_sdl);
 
 	SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, text_surface);
 	int texture_width = 0;
@@ -132,6 +150,13 @@ void draw_text(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x
 	SDL_RenderCopy(renderer, texture, NULL, &texture_rect);
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(text_surface);
+
+}
+
+void draw_text_centered(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x, int y, Uint32 colour){
+	int w,h;
+	TTF_SizeText(font,string,&w,&h);
+	draw_text(renderer, string, font, x-w/2, y-h/2, 0xFF000000);
 
 }
 
@@ -336,7 +361,29 @@ int main(int argc, char* argv[]){
 				draw_text(renderer, info_text, font_15, 10,10, 0xFF000000);
 				if(status.play_status==GAME_OVER){
 					char  text[] = {'G','A','M','E',' ','O','V','E','R','\0'};
-					draw_text(renderer, text, font_30, screen_width/2,screen_height/2, 0xFF000000);
+					draw_text_centered(renderer, text, font_30, screen_width/2,screen_height/2, 0xFF000000);
+					char restart_text[] = {'R','e','s','t','a','r','t','\0'};
+					if(
+							handle_click_box(renderer,
+								restart_text,
+								font_30,
+								mouse.x,mouse.y,
+								screen_width/4,
+								screen_height*5/8,
+								screen_width*3/4,
+								screen_height*7/8)&&
+							mouse.click){
+						for(int i =0; i<am_lines; i++){
+							lines[i].stop_using();
+							stations.clear();
+						}
+						status.play_status = PLAYING;
+						stations.random_add();
+						stations.random_add();
+						stations.random_add();
+						stations.random_add();
+
+					}
 				}
 
 				//drw message

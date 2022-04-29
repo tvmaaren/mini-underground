@@ -53,8 +53,8 @@ int min_distance_stations(SHAPE shape, int station_id, bool* visited){
 		if(stations.stations[adjacent_station].shape == shape){
 			return(1);
 		}else{
-			int min_adjcent = min_distance_stations(shape, adjacent_station, visited);
-			if(min_adjcent+1<=min) min=min_adjcent+1;
+			int min_adjacent = min_distance_stations(shape, adjacent_station, visited);
+			if(min_adjacent != INT_MAX && min_adjacent+1<=min) min=min_adjacent+1;
 
 		}
 	}}
