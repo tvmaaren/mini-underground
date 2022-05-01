@@ -378,6 +378,7 @@ int main(int argc, char* argv[]){
 							stations.clear();
 						}
 						status.play_status = PLAYING;
+						status.points = 0;
 						stations.random_add();
 						stations.random_add();
 						stations.random_add();
