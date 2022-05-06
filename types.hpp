@@ -8,7 +8,7 @@ typedef struct{
 	float y;
 }Point2d;
 
-typedef enum{GAME_OVER, PLAYING} PLAY_STATUS;
+typedef enum{GAME_OVER, PLAYING, PAUSED} PLAY_STATUS;
 
 typedef struct{
 	int points;

@@ -30,8 +30,8 @@ using namespace std;
 
 
 float calc_scale(int width, int height){
-		int min_width_heigt = width>height ? height : width;
-		float scale = (float)min_width_heigt/(float)480;
+		int min_width_height = width>height ? height : width;
+		float scale = (float)min_width_height/(float)480;
 		return scale;
 }
 
@@ -64,17 +64,21 @@ void draw_text(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x
 void draw_text_centered(SDL_Renderer* renderer, const char* string, TTF_Font* font, int x, int y, Uint32 colour);
 
 //returns true if the mouse is on this box
-bool handle_click_box(SDL_Renderer* renderer,const char* text, TTF_Font* font, float mouse_x,float mouse_y,float x1,float y1,float x2,float y2){
+bool handle_click_box(SDL_Renderer* renderer, float mouse_x,float mouse_y,float x1,float y1,float x2,float y2, Uint32 colour_1, Uint32 colour_2){
 
 	bool ret= false;
 	Transform trans;
 	trans.init();
 	if(mouse_x > x1 && mouse_y > y1 && mouse_x < x2 && mouse_y < y2){
 		ret=true;
-		trans.drawrectangle(renderer, x1,y1,x2,y2,0xFFFF0000);
+		trans.drawrectangle(renderer, x1,y1,x2,y2,colour_1);
 	}else{
-		trans.drawrectangle(renderer, x1,y1,x2,y2,0xFFD00000);
+		trans.drawrectangle(renderer, x1,y1,x2,y2,colour_2);
 	}
+	return ret;
+}
+bool handle_click_box_text(SDL_Renderer* renderer,const char* text, TTF_Font* font, float mouse_x,float mouse_y,float x1,float y1,float x2,float y2,Uint32 colour_1, Uint32 colour_2){
+	bool ret = handle_click_box(renderer, mouse_x, mouse_y, x1, y1, x2, y2, colour_1 , colour_2);
 	draw_text_centered(renderer, text, font, (x2+x1)/2, (y2+y1)/2, 0xFF000000);
 	return ret;
 }
@@ -231,7 +235,7 @@ int main(int argc, char* argv[]){
 			while (!done) {
 				SDL_GetWindowSize(window, &screen_width,&screen_height);
 				//rescale based on size window
-				/*int min_width_heigt = screen_width>screen_height ? screen_height : screen_width;*/
+				/*int min_width_height = screen_width>screen_height ? screen_height : screen_width;*/
 				scale = calc_scale(screen_width, screen_height);
 
 				hovering.type = NO_OBJECT;
@@ -264,7 +268,7 @@ int main(int argc, char* argv[]){
 				SDL_RenderClear(renderer);
 
 
-				if(status.play_status==PLAYING&&mouse.let_go&&selected.line_i!=INT_MAX){
+				if((status.play_status==PLAYING||status.play_status==PAUSED)&&mouse.let_go&&selected.line_i!=INT_MAX){
 					lines[selected.line_i].unselect();
 					selected.line_i=INT_MAX;
 				}
@@ -279,13 +283,14 @@ int main(int argc, char* argv[]){
 				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 				//Check if the mouse is hovering above a station
-				if(status.play_status == PLAYING && stations.check_hovering(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
+				if((status.play_status == PLAYING||status.play_status==PAUSED) 
+						&& stations.check_hovering(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
 					hovering.type = STATION_OBJECT;
 				}
 				for(int i =0; (unsigned int)i<am_lines; i++){
 					if(!lines[i].used)
 						continue;
-					if(status.play_status == PLAYING){
+					if(status.play_status == PLAYING||status.play_status==PAUSED){
 					if(!hovering.type&&lines[i].handle_mouse(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y))){
 						hovering.type = LINE_OBJECT;
 						hovering.line_i = i;
@@ -299,7 +304,7 @@ int main(int argc, char* argv[]){
 				}
 				stations.draw(renderer, trans);
 				
-				if(status.play_status == PLAYING){
+				if(status.play_status == PLAYING||status.play_status==PAUSED){
 				if(hovering.type == STATION_OBJECT){
 					if(mouse.click && selected.line_i == INT_MAX){
 						
@@ -325,7 +330,7 @@ int main(int argc, char* argv[]){
 						lines[selected.line_i].click_add(stations.hovering_id);
 					}
 				}
-				if(random() < chance_of_a_new_station){
+				if(status.play_status==PLAYING&&random() < chance_of_a_new_station){
 					stations.random_add();
 				}
 				}
@@ -359,35 +364,82 @@ int main(int argc, char* argv[]){
 				sprintf(info_text, "%d",status.points);
 
 				draw_text(renderer, info_text, font_15, 10,10, 0xFF000000);
-				if(status.play_status==GAME_OVER){
-					char  text[] = {'G','A','M','E',' ','O','V','E','R','\0'};
-					draw_text_centered(renderer, text, font_30, screen_width/2,screen_height/2, 0xFF000000);
-					char restart_text[] = {'R','e','s','t','a','r','t','\0'};
-					if(
+				switch(status.play_status){
+					case(PLAYING):
+						{
+						int min_width_height = screen_width>screen_height ? screen_height : screen_width;
+						float x1 = screen_width*14/16;
+						float y1 = screen_height/16;
+						float x2 = x1+min_width_height/16;
+						float y2 = y1+min_width_height/16;
+						if(mouse.click&& 
 							handle_click_box(renderer,
-								restart_text,
-								font_30,
-								mouse.x,mouse.y,
-								screen_width/4,
-								screen_height*5/8,
-								screen_width*3/4,
-								screen_height*7/8)&&
-							mouse.click){
-						for(int i =0; i<am_lines; i++){
-							lines[i].stop_using();
-							stations.clear();
+								mouse.x,
+								mouse.y, x1,
+								y1, x2, y2,
+								0x00000000,0x00000000)){
+							status.play_status = PAUSED;
 						}
-						status.play_status = PLAYING;
-						status.points = 0;
-						stations.random_add();
-						stations.random_add();
-						stations.random_add();
-						stations.random_add();
 
-					}
+						Transform identity;
+						identity.init();
+						//draw pause button
+						identity.drawrectangle(renderer, x1,y1,x1*2/3+x2/3,y2,0xFF000000);
+						identity.drawrectangle(renderer, x2*2/3+x1/3,y1,x2,y2,0xFF000000);
+						break;
+						}
+					case(PAUSED):
+						{
+						int min_width_height = screen_width>screen_height ? screen_height : screen_width;
+						float x1 = screen_width*14/16;
+						float y1 = screen_height/16;
+						float x2 = x1+min_width_height/16;
+						float y2 = y1+min_width_height/16;
+						if(mouse.click&& 
+							handle_click_box(renderer,
+								mouse.x,
+								mouse.y, x1,
+								y1, x2, y2,
+								0x00000000,0x00000000)){
+							status.play_status = PLAYING;
+						}
+						Transform identity;
+						identity.init();
+						//draw play button
+						identity.drawngon(renderer,3,0, x1*2/3+x2/3,y1/2+y2/2,(x2-x1)*2/3,0xFF000000);
+						break;
+						}
+					case(GAME_OVER):
+						char  text[] = {'G','A','M','E',' ','O','V','E','R','\0'};
+						draw_text_centered(renderer, text, font_30, screen_width/2,screen_height/2, 0xFF000000);
+						char restart_text[] = {'R','e','s','t','a','r','t','\0'};
+						if(
+								handle_click_box_text(renderer,
+									restart_text,
+									font_30,
+									mouse.x,mouse.y,
+									screen_width/4,
+									screen_height*5/8,
+									screen_width*3/4,
+									screen_height*7/8,
+									0xFFFF0000,0xFFD00000)&&
+								mouse.click){
+							for(int i =0; i<am_lines; i++){
+								lines[i].stop_using();
+								stations.clear();
+							}
+							status.play_status = PLAYING;
+							status.points = 0;
+							stations.random_add();
+							stations.random_add();
+							stations.random_add();
+							stations.random_add();
+
+						}
+						break;
 				}
 
-				//drw message
+				//draw message
 				if(show_message){
 					draw_text(renderer, message.c_str(), font_20, 30,10, 0xFFFF0000);
 					if(frame> message_end_frame){

@@ -65,6 +65,7 @@ class TRAIN{
 	void move(float seconds);
 	bool should_enter(SHAPE shape, int station_id);
 	bool should_leave(SHAPE shape, int station_id);
+	int get_next_station();
 	bool find_next_station();
 };
 class LINE{
@@ -94,6 +95,7 @@ class LINE{
 	bool handle_mouse(float mouse_x, float mouse_y);
 	void draw(SDL_Renderer* renderer,Transform& trans,
 			float mouse_x, float mouse_y);
+	void remove_station(node_t* node/*node belonging to station*/);
 	void check_removed();//remove as many elemements from removed_segments as possible
 
 	//When selection starts it keeps track of stations that

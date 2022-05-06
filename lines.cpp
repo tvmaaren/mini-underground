@@ -69,7 +69,8 @@ bool BUFFER::handle_mouse(float mouse_x, float mouse_y){
 void BUFFER::draw(SDL_Renderer* renderer,Transform& trans, Uint32 colour, float mouse_x, float mouse_y){
 	if(!created)
 		return;
-	if(status.play_status == PLAYING && handle_mouse(mouse_x, mouse_y)){
+	if((status.play_status == PLAYING || status.play_status == PAUSED)&&
+			handle_mouse(mouse_x, mouse_y)){
 		trans.drawline(renderer, bottom_x, bottom_y, middle_x,
 				middle_y, trackwidth,0xFF000000);
 		trans.drawline(renderer, left_x, left_y, right_x,
@@ -267,17 +268,16 @@ void TRAIN::move(float seconds){
 }
 //Returns true if the passengers of shape %shape% should leave the train
 bool TRAIN::should_leave(SHAPE shape, int station_id){
-	return(!should_enter(shape, station_id));
+	int dist_current_station = min_distance_stations(shape, station_id, NULL);
+	if(dist_current_station == INT_MAX)return true;
+
+
+	int dist_next_station = min_distance_stations(shape, get_next_station(), NULL);
+
+	return(dist_next_station>dist_current_station);
 }
 
-//Returns true if the passengers of shape %shape% at station %station_id% should
-//enter train
-bool TRAIN::should_enter(SHAPE shape, int station_id){
-	//compare the minimum distance of the next station
-	//to the current station
-	
-	int dist_current_station = min_distance_stations(shape, station_id, NULL);
-	if(dist_current_station == INT_MAX)return false;
+int TRAIN::get_next_station(){
 	int next_station;
 	if(start_line->links[direction]){
 		next_station = start_line->links[direction]->value;
@@ -291,9 +291,21 @@ bool TRAIN::should_enter(SHAPE shape, int station_id){
 			}
 		}
 	}
+	return next_station;
+
+}
+
+//Returns true if the passengers of shape %shape% at station %station_id% should
+//enter train
+bool TRAIN::should_enter(SHAPE shape, int station_id){
+	//compare the minimum distance of the next station
+	//to the current station
+	
+	int dist_current_station = min_distance_stations(shape, station_id, NULL);
+	if(dist_current_station == INT_MAX)return false;
 
 
-	int dist_next_station = min_distance_stations(shape, next_station, NULL);
+	int dist_next_station = min_distance_stations(shape, get_next_station(), NULL);
 
 	return(dist_next_station<=dist_current_station);
 }
@@ -316,6 +328,17 @@ void LINE::stop_using(){
 		trains[train_id].initialised = false;
 		set_train_id=false;
 	}
+
+	//remove all stations from line
+	node_t* following;
+	for(node_t* head = first_station; head; head = following){
+		following = head->links[NEXT];
+		remove_station(head);
+	}
+	
+
+	first_station = NULL;
+	last_station = NULL;
 }
 
 
@@ -391,6 +414,7 @@ void LINE::click_add(int station_id){
 		check_removed();
 		}else{
 			stop_using();
+			return;
 		}
 	//add a station	
 	}else{
@@ -600,6 +624,18 @@ void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 
 }
 
+void LINE::remove_station(node_t* node/*node belonging to station*/){
+	//Make sure the stations don't point to the nodes that will be removed
+	for(unsigned int i =0; i<stations.stations[node->value].nodes.size();i++){
+		if(stations.stations[node->value].nodes[i]==node){
+			vector<node_t*>::iterator begin = stations.stations[node->value].nodes.begin();
+			stations.stations[node->value].nodes.erase(begin+i);
+			break;
+		}
+	}
+	remove_node(node);
+}
+
 void LINE::check_removed(){
 	node_t* following;
 	for(node_t* head = removed_segments; head; head = following){
@@ -622,8 +658,10 @@ void LINE::check_removed(){
 			if(head == removed_segments)
 				removed_segments = head->links[NEXT]->links[NEXT];
 
-			remove_node(head);
-			remove_node(next);
+			
+			remove_station(head);
+			remove_station(next);
+			
 		}
 			
 	}
