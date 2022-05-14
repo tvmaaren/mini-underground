@@ -545,6 +545,10 @@ bool LINE::handle_mouse(float mouse_x, float mouse_y){
 
 	return(return_val);
 }
+
+void drawsegment(SDL_Renderer* renderer, float x0, float y0, float x1, float y1){
+	
+}
 void LINE::draw(SDL_Renderer* renderer,Transform& trans,
 		float mouse_x, float mouse_y){
 	//check if there is actually something to draw

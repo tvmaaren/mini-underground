@@ -8,6 +8,10 @@
 
 #define station_max_passengers 10
 
+#define randomly_add_stations true
+#define manually_add_stations false
+//#define all_lines_available_from_beginning
+
 #ifdef __ANDROID__
 #define font_file "fonts/dejavusanscondensed-bold.ttf"
 #else
@@ -33,6 +37,15 @@ const Uint32 line_colours[]={
 0xFF0000FF,
 0xFF00FFFF};
 
+#ifdef all_lines_available_from_beginning
+const int line_unlocked[]={
+0,
+0,
+0,
+0,
+0,
+0};
+#else
 const int line_unlocked[]={
 0,
 0,
@@ -40,3 +53,5 @@ const int line_unlocked[]={
 100,
 200,
 300};
+#endif
+

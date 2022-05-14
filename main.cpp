@@ -31,7 +31,11 @@ using namespace std;
 
 float calc_scale(int width, int height){
 		int min_width_height = width>height ? height : width;
+#ifdef __ANDROID__
+		float scale = (float)min_width_height/(float)240;
+#else
 		float scale = (float)min_width_height/(float)480;
+#endif
 		return scale;
 }
 
@@ -216,10 +220,12 @@ int main(int argc, char* argv[]){
 			float start_camera_x;
 			float start_camera_y;
 
-			stations.random_add();
-			stations.random_add();
-			stations.random_add();
-			stations.random_add();
+			if(randomly_add_stations){
+				stations.random_add();
+				stations.random_add();
+				stations.random_add();
+				stations.random_add();
+			}
 
 
 			MOUSE mouse;
@@ -331,7 +337,9 @@ int main(int argc, char* argv[]){
 					}
 				}
 				if(status.play_status==PLAYING&&random() < chance_of_a_new_station){
-					stations.random_add();
+					if(randomly_add_stations){
+						stations.random_add();
+					}
 				}
 				}
 				if(mouse.click && selected.line_i==INT_MAX){
@@ -344,11 +352,8 @@ int main(int argc, char* argv[]){
 					camera_x = start_camera_x - (mouse.start_x-mouse.x)/scale;
 					camera_y = start_camera_y - (mouse.start_y-mouse.y)/scale;
 				}
-				if(mouse.click && selected.line_i!=INT_MAX && !hovering.type){
-
-					lines[selected.line_i].click_add(
-							stations.add(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y)));
-
+				if(manually_add_stations && mouse.click && selected.line_i==INT_MAX && !hovering.type){
+					stations.add(inverse_trans_x(mouse.x), inverse_trans_y(mouse.y));
 				}
 
 
@@ -430,10 +435,12 @@ int main(int argc, char* argv[]){
 							}
 							status.play_status = PLAYING;
 							status.points = 0;
-							stations.random_add();
-							stations.random_add();
-							stations.random_add();
-							stations.random_add();
+							if(randomly_add_stations){
+								stations.random_add();
+								stations.random_add();
+								stations.random_add();
+								stations.random_add();
+							}
 
 						}
 						break;
